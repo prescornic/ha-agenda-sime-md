@@ -50,5 +50,45 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "latest_grade": {
+        "name": "Последняя оценка"
+      },
+      "general_average": {
+        "name": "Средний балл"
+      },
+      "absences": {
+        "name": "Всего пропусков"
+      },
+      "today_lessons": {
+        "name": "Уроки на сегодня"
+      },
+      "next_day_lessons": {
+        "name": "Уроки на следующий учебный день"
+      }
+    },
+    "binary_sensor": {
+      "absence_today": {
+        "name": "Пропуск сегодня"
+      },
+      "new_grade_today": {
+        "name": "Новая оценка сегодня"
+      },
+      "school_day": {
+        "name": "Учебный день"
+      }
+    },
+    "calendar": {
+      "timetable": {
+        "name": "Расписание уроков"
+      }
+    },
+    "todo": {
+      "homework": {
+        "name": "Домашнее задание"
+      }
+    }
   }
 }

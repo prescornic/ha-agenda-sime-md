@@ -6,7 +6,6 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.agenda_sime_md import async_setup_entry, async_unload_entry
 from custom_components.agenda_sime_md.const import (
     CONF_ROLE,
     CONF_STUDENTS,
@@ -43,12 +42,14 @@ async def test_setup_and_unload_entry(hass: HomeAssistant):
         ),
         patch("custom_components.agenda_sime_md.SimeClient.close", new_callable=AsyncMock),
     ):
-        assert await async_setup_entry(hass, entry) is True
+        assert await hass.config_entries.async_setup(entry.entry_id) is True
+        await hass.async_block_till_done()
         assert DOMAIN in hass.data
         assert entry.entry_id in hass.data[DOMAIN]
 
         coordinator = hass.data[DOMAIN][entry.entry_id]
         assert "UK00000001" in coordinator.data
 
-        assert await async_unload_entry(hass, entry) is True
+        assert await hass.config_entries.async_unload(entry.entry_id) is True
+        await hass.async_block_till_done()
         assert entry.entry_id not in hass.data[DOMAIN]

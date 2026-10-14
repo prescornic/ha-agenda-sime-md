@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from typing import Self
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -67,7 +68,7 @@ class SimeClient:
         if self._own_session and self._session and not self._session.closed:
             await self._session.close()
 
-    async def __aenter__(self) -> SimeClient:
+    async def __aenter__(self) -> Self:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -190,7 +191,7 @@ class SimeClient:
                 match = re.search(pattern, html)
                 if match:
                     ajax_id = match.group(1).encode().decode("unicode_escape")
-                    region_id = match.group(2)
+                    _region_id = match.group(2)
 
                     r_obj = {
                         "salt": salt,
@@ -222,7 +223,7 @@ class SimeClient:
                                         # Merge marks across semesters
                                         subjects[subj_name].grades.extend(subj_data.grades)
                                         subjects[subj_name].average = subjects[subj_name].calculate_average()
-                    except Exception as err:
+                    except (aiohttp.ClientError, TimeoutError, ValueError) as err:
                         _LOGGER.warning("Failed to fetch %s grades report: %s", sem_name, err)
 
         # 6. Calculate overall general average

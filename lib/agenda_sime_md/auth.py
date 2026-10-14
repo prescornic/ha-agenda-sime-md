@@ -168,7 +168,7 @@ class SimeAuthManager:
                     sec_match = re.search(r"([0-9]+)\s+seconds", error_message)
                     if sec_match:
                         wait_sec = int(sec_match.group(1))
-                except Exception:
+                except (ValueError, TypeError):
                     pass
             if "blocked" in error_message.lower() or "wait" in error_message.lower():
                 raise SimeRateLimitError(error_message, wait_seconds=wait_sec)

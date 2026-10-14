@@ -50,5 +50,45 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "latest_grade": {
+        "name": "Ultima notă"
+      },
+      "general_average": {
+        "name": "Media generală"
+      },
+      "absences": {
+        "name": "Total absențe"
+      },
+      "today_lessons": {
+        "name": "Lecțiile de azi"
+      },
+      "next_day_lessons": {
+        "name": "Lecțiile pentru următoarea zi de școală"
+      }
+    },
+    "binary_sensor": {
+      "absence_today": {
+        "name": "Absență astăzi"
+      },
+      "new_grade_today": {
+        "name": "Notă nouă astăzi"
+      },
+      "school_day": {
+        "name": "Zi de școală"
+      }
+    },
+    "calendar": {
+      "timetable": {
+        "name": "Orar școlar"
+      }
+    },
+    "todo": {
+      "homework": {
+        "name": "Teme pentru acasă"
+      }
+    }
   }
 }

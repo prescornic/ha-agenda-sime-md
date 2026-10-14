@@ -50,5 +50,45 @@
         }
       }
     }
+  },
+  "entity": {
+    "sensor": {
+      "latest_grade": {
+        "name": "Latest Grade"
+      },
+      "general_average": {
+        "name": "General Average"
+      },
+      "absences": {
+        "name": "Total Absences"
+      },
+      "today_lessons": {
+        "name": "Today's Lessons"
+      },
+      "next_day_lessons": {
+        "name": "Next School Day Lessons"
+      }
+    },
+    "binary_sensor": {
+      "absence_today": {
+        "name": "Absence Today"
+      },
+      "new_grade_today": {
+        "name": "New Grade Today"
+      },
+      "school_day": {
+        "name": "School Day"
+      }
+    },
+    "calendar": {
+      "timetable": {
+        "name": "Timetable"
+      }
+    },
+    "todo": {
+      "homework": {
+        "name": "Homework"
+      }
+    }
   }
 }
