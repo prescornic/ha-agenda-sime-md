@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Agenda SIME MD Authentication",
+        "description": "Enter your credentials for agenda.sime.md. Supports both Parent and Student accounts.",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "students": {
+        "title": "Select Students",
+        "description": "Select the student(s) you would like to track in Home Assistant.",
+        "data": {
+          "students": "Students"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate with Agenda SIME MD",
+        "description": "Please re-enter your password to update your session credentials.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to agenda.sime.md.",
+      "invalid_auth": "Invalid username or password.",
+      "unknown": "Unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This account is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Agenda SIME MD Options",
+        "description": "Configure polling intervals for school hours.",
+        "data": {
+          "scan_interval_day": "Daytime Polling Interval (minutes)",
+          "scan_interval_night": "Nighttime Polling Interval (minutes)"
+        }
+      }
+    }
+  }
+}

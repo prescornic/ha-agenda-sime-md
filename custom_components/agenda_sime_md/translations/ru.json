@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Авторизация Agenda SIME MD",
+        "description": "Введите учетные данные для agenda.sime.md. Поддерживаются учетные записи Родителя и Ученика.",
+        "data": {
+          "username": "Имя пользователя (логин)",
+          "password": "Пароль"
+        }
+      },
+      "students": {
+        "title": "Выбор Учеников",
+        "description": "Выберите учеников, которых вы хотите отслеживать в Home Assistant.",
+        "data": {
+          "students": "Ученики"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Повторная авторизация Agenda SIME MD",
+        "description": "Пожалуйста, введите пароль повторно для обновления сессии.",
+        "data": {
+          "password": "Пароль"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Не удалось подключиться к agenda.sime.md.",
+      "invalid_auth": "Неверное имя пользователя или пароль.",
+      "unknown": "Произошла непредвиденная ошибка."
+    },
+    "abort": {
+      "already_configured": "Эта учетная запись уже настроена.",
+      "reauth_successful": "Повторная авторизация прошла успешно."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Настройки Agenda SIME MD",
+        "description": "Настройте интервалы опроса в течение дня.",
+        "data": {
+          "scan_interval_day": "Дневной интервал опроса (минуты)",
+          "scan_interval_night": "Ночной интервал опроса (минуты)"
+        }
+      }
+    }
+  }
+}

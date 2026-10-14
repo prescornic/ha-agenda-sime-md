@@ -1,0 +1,49 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Autentificare Agenda SIME MD",
+        "description": "Introduceți datele de conectare pentru agenda.sime.md. Sunt acceptate conturi de Părinte și Elev.",
+        "data": {
+          "username": "Nume utilizator (login)",
+          "password": "Parolă"
+        }
+      },
+      "students": {
+        "title": "Selectare Elevi",
+        "description": "Selectați elevii pe care doriți să îi monitorizați în Home Assistant.",
+        "data": {
+          "students": "Elevi"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reautentificare Agenda SIME MD",
+        "description": "Vă rugăm să reintroduceți parola pentru a actualiza sesiunea.",
+        "data": {
+          "password": "Parolă"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Conexiunea la agenda.sime.md a eșuat.",
+      "invalid_auth": "Nume de utilizator sau parolă incorectă.",
+      "unknown": "A apărut o eroare neașteptată."
+    },
+    "abort": {
+      "already_configured": "Acest cont este deja configurat.",
+      "reauth_successful": "Reautentificarea s-a realizat cu succes."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opțiuni Agenda SIME MD",
+        "description": "Configurați intervalele de actualizare a datelor.",
+        "data": {
+          "scan_interval_day": "Interval de actualizare pe timp de zi (minute)",
+          "scan_interval_night": "Interval de actualizare pe timp de noapte (minute)"
+        }
+      }
+    }
+  }
+}

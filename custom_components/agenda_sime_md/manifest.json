@@ -1,0 +1,13 @@
+{
+  "domain": "agenda_sime_md",
+  "name": "Agenda SIME MD",
+  "codeowners": ["@prescornic"],
+  "config_flow": true,
+  "documentation": "https://github.com/prescornic/ha-agenda-sime-md",
+  "issue_tracker": "https://github.com/prescornic/ha-agenda-sime-md/issues",
+  "iot_class": "cloud_polling",
+  "version": "0.1.0",
+  "integration_type": "hub",
+  "requirements": [],
+  "dependencies": []
+}
