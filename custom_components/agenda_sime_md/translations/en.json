@@ -6,7 +6,8 @@
         "description": "Enter your credentials for agenda.sime.md. Supports both Parent and Student accounts.",
         "data": {
           "username": "Username",
-          "password": "Password"
+          "password": "Password",
+          "role": "Account Type"
         }
       },
       "students": {
@@ -27,6 +28,8 @@
     "error": {
       "cannot_connect": "Failed to connect to agenda.sime.md.",
       "invalid_auth": "Invalid username or password.",
+      "rate_limit": "Too many attempts. The service has temporarily throttled login requests. Please wait a moment.",
+      "no_students_selected": "Please select at least one student.",
       "unknown": "Unexpected error occurred."
     },
     "abort": {
@@ -41,7 +44,9 @@
         "description": "Configure polling intervals for school hours.",
         "data": {
           "scan_interval_day": "Daytime Polling Interval (minutes)",
-          "scan_interval_night": "Nighttime Polling Interval (minutes)"
+          "scan_interval_night": "Nighttime Polling Interval (minutes)",
+          "day_start_hour": "Daytime Start Hour (0-23)",
+          "day_end_hour": "Daytime End Hour (1-24)"
         }
       }
     }

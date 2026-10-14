@@ -1,11 +1,9 @@
 """Unit tests for SimeClient."""
 
-import pytest
 from lib.agenda_sime_md import (
     SimeAccountRole,
     SimeAuthError,
     SimeClient,
-    SimeConnectionError,
     SimeRateLimitError,
 )
 

@@ -5,13 +5,12 @@ from __future__ import annotations
 import json
 import logging
 import re
-import urllib.parse
-from typing import Optional
+
 import aiohttp
 from bs4 import BeautifulSoup
 
 from .auth import BASE_URL, SimeAuthManager
-from .exceptions import SimeAuthError, SimeConnectionError, SimeError
+from .exceptions import SimeConnectionError
 from .models import (
     SimeAccountRole,
     SimeStudent,
@@ -47,7 +46,7 @@ class SimeClient:
         username: str,
         password: str,
         role: SimeAccountRole = SimeAccountRole.PARENT,
-        session: Optional[aiohttp.ClientSession] = None,
+        session: aiohttp.ClientSession | None = None,
     ) -> None:
         self.username = username
         self.password = password
@@ -125,7 +124,7 @@ class SimeClient:
 
         return students
 
-    async def get_student_data(self, student_id: Optional[str] = None) -> SimeStudentData:
+    async def get_student_data(self, student_id: str | None = None) -> SimeStudentData:
         """Fetch complete school data (grades, absences, homework) for a student."""
         session = await self._ensure_logged_in()
 

@@ -1,7 +1,7 @@
 """Unit tests for the agenda_sime_md parsers."""
 
 from bs4 import BeautifulSoup
-from lib.agenda_sime_md.models import SimeAbsenceSummary, SimeSubjectGrades
+
 from lib.agenda_sime_md.parser import (
     parse_absences_summary,
     parse_homework,

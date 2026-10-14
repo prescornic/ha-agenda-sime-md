@@ -7,13 +7,13 @@ import json
 import logging
 import re
 import urllib.parse
+
 import aiohttp
 from bs4 import BeautifulSoup
 
 from .exceptions import (
     SimeAuthError,
     SimeConnectionError,
-    SimeError,
     SimeRateLimitError,
 )
 from .models import SimeAccountRole

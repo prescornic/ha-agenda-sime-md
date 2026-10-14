@@ -3,22 +3,23 @@
     "step": {
       "user": {
         "title": "Autentificare Agenda SIME MD",
-        "description": "Introduceți datele de conectare pentru agenda.sime.md. Sunt acceptate conturi de Părinte și Elev.",
+        "description": "Introduceți datele de conectare pentru agenda.sime.md. Sunt suportate atât conturile de Părinte, cât și cele de Elev.",
         "data": {
-          "username": "Nume utilizator (login)",
-          "password": "Parolă"
+          "username": "Nume utilizator (Login)",
+          "password": "Parolă",
+          "role": "Tip cont"
         }
       },
       "students": {
         "title": "Selectare Elevi",
-        "description": "Selectați elevii pe care doriți să îi monitorizați în Home Assistant.",
+        "description": "Selectați elevul/elevii pe care doriți să îi monitorizați în Home Assistant.",
         "data": {
           "students": "Elevi"
         }
       },
       "reauth_confirm": {
-        "title": "Reautentificare Agenda SIME MD",
-        "description": "Vă rugăm să reintroduceți parola pentru a actualiza sesiunea.",
+        "title": "Re-autentificare Agenda SIME MD",
+        "description": "Vă rugăm să introduceți noua parolă pentru actualizarea acreditărilor de sesiune.",
         "data": {
           "password": "Parolă"
         }
@@ -27,21 +28,25 @@
     "error": {
       "cannot_connect": "Conexiunea la agenda.sime.md a eșuat.",
       "invalid_auth": "Nume de utilizator sau parolă incorectă.",
+      "rate_limit": "Prea multe încercări. Serviciul a limitat temporar cererile. Vă rugăm să așteptați un moment.",
+      "no_students_selected": "Vă rugăm să selectați cel puțin un elev.",
       "unknown": "A apărut o eroare neașteptată."
     },
     "abort": {
       "already_configured": "Acest cont este deja configurat.",
-      "reauth_successful": "Reautentificarea s-a realizat cu succes."
+      "reauth_successful": "Re-autentificarea a fost realizată cu succes."
     }
   },
   "options": {
     "step": {
       "init": {
         "title": "Opțiuni Agenda SIME MD",
-        "description": "Configurați intervalele de actualizare a datelor.",
+        "description": "Configurați intervalele de actualizare a datelor pentru orele de școală.",
         "data": {
           "scan_interval_day": "Interval de actualizare pe timp de zi (minute)",
-          "scan_interval_night": "Interval de actualizare pe timp de noapte (minute)"
+          "scan_interval_night": "Interval de actualizare pe timp de noapte (minute)",
+          "day_start_hour": "Ora de început a zilei (0-23)",
+          "day_end_hour": "Ora de sfârșit a zilei (1-24)"
         }
       }
     }

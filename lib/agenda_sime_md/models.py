@@ -3,9 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 
 class SimeAccountRole(str, Enum):
@@ -21,13 +20,13 @@ class SimeStudent:
 
     id: str
     name: str
-    birthdate: Optional[str] = None
-    permanent_code: Optional[str] = None
-    school_name: Optional[str] = None
-    classroom: Optional[str] = None
-    class_master: Optional[str] = None
-    address: Optional[str] = None
-    study_year: Optional[str] = None
+    birthdate: str | None = None
+    permanent_code: str | None = None
+    school_name: str | None = None
+    classroom: str | None = None
+    class_master: str | None = None
+    address: str | None = None
+    study_year: str | None = None
     current_semester: int = 1
 
 
@@ -46,10 +45,10 @@ class SimeSubjectGrades:
 
     subject: str
     grades: list[float] = field(default_factory=list)
-    average: Optional[float] = None
-    semester_grade: Optional[float] = None
+    average: float | None = None
+    semester_grade: float | None = None
 
-    def calculate_average(self) -> Optional[float]:
+    def calculate_average(self) -> float | None:
         """Calculate arithmetic average of registered marks."""
         if not self.grades:
             return None
@@ -96,9 +95,9 @@ class SimeLesson:
     subject: str
     start_time: datetime
     end_time: datetime
-    classroom: Optional[str] = None
-    teacher: Optional[str] = None
-    topic: Optional[str] = None
+    classroom: str | None = None
+    teacher: str | None = None
+    topic: str | None = None
 
 
 @dataclass
@@ -108,7 +107,7 @@ class SimeStudentData:
     student: SimeStudent
     recent_grades: list[SimeRecentGrade] = field(default_factory=list)
     subjects: dict[str, SimeSubjectGrades] = field(default_factory=dict)
-    general_average: Optional[float] = None
+    general_average: float | None = None
     absence_summary: SimeAbsenceSummary = field(default_factory=SimeAbsenceSummary)
     homework: list[SimeHomework] = field(default_factory=list)
     timetable: list[SimeLesson] = field(default_factory=list)
