@@ -1,0 +1,124 @@
+# ==============================================================================
+# AGENDA SIME MD — LOVELACE DASHBOARD EXAMPLES
+# ==============================================================================
+# In all examples below, replace 'elev' with your student's entity slug
+# (e.g. sensor.roman_prescornic_today_lessons or similar).
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. ORAR & TEME LECȚII (AZI & URMĂTOAREA ZI DE ȘCOALĂ)
+# Card nativ Markdown cu colorare dinamică a stării lecțiilor:
+#  - Roșu (🔴): Lecția curentă (în desfășurare acum)
+#  - Albastru (🔵): Lecțiile viitoare (urmează mai târziu azi)
+#  - Gri (⚪): Lecțiile încheiate anterior azi
+#  - Următoarea zi de școală (omite automat weekendurile și vacanțele)
+# ------------------------------------------------------------------------------
+type: markdown
+title: "📚 Orar & Teme Lecții"
+content: >
+  {% set today = state_attr('sensor.elev_today_lessons', 'lessons') or [] %}
+  {% set next_day = state_attr('sensor.elev_next_day_lessons', 'lessons') or [] %}
+  {% set next_date = state_attr('sensor.elev_next_day_lessons', 'date') %}
+
+  ### 📅 Lecțiile de Astăzi ({{ states('sensor.elev_today_lessons') }} lecții)
+  {% if today | length > 0 %}
+    | Oră | Disciplină | Sala | Temă / Subiect | Stare |
+    | :--- | :--- | :--- | :--- | :--- |
+    {% for l in today %}
+      {% set start = as_datetime(l.start_time).strftime('%H:%M') if l.start_time else '--:--' %}
+      {% set end = as_datetime(l.end_time).strftime('%H:%M') if l.end_time else '--:--' %}
+      {% if l.status == 'current' %}
+        {% set status_badge = '<span style="color:#ef4444;font-weight:bold;">🔴 În desfășurare</span>' %}
+      {% elif l.status == 'past' %}
+        {% set status_badge = '<span style="color:#9ca3af;">⚪ Încheiată</span>' %}
+      {% else %}
+        {% set status_badge = '<span style="color:#3b82f6;">🔵 Urmează</span>' %}
+      {% endif %}
+      | **{{ start }}-{{ end }}** | {{ l.subject }} | {{ l.classroom or '-' }} | *{{ l.topic or '-' }}* | {{ status_badge }} |
+    {% endfor %}
+  {% else %}
+    *Nu sunt lecții programate pentru astăzi.*
+  {% endif %}
+
+  ---
+
+  ### ⏭️ Următoarea Zi de Școală ({% if next_date %}{{ as_datetime(next_date).strftime('%d.%m.%Y') }}{% else %}—{% endif %})
+  {% if next_day | length > 0 %}
+    | Oră | Disciplină | Sala | Temă / Subiect |
+    | :--- | :--- | :--- | :--- |
+    {% for l in next_day %}
+      {% set start = as_datetime(l.start_time).strftime('%H:%M') if l.start_time else '--:--' %}
+      {% set end = as_datetime(l.end_time).strftime('%H:%M') if l.end_time else '--:--' %}
+      | **{{ start }}-{{ end }}** | {{ l.subject }} | {{ l.classroom or '-' }} | *{{ l.topic or '-' }}* |
+    {% endfor %}
+  {% else %}
+    *Nu sunt date disponibile pentru următoarea zi de școală.*
+  {% endif %}
+
+---
+
+# ------------------------------------------------------------------------------
+# 2. REZUMAT ACADEMIC & SITUAȚIE ȘCOLARĂ (GPA, ULTIMA NOTĂ, ABSENȚE)
+# Card de tip Grid / Entities cu toți indicatorii principali ai elevului.
+# ------------------------------------------------------------------------------
+type: vertical-stack
+cards:
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: tile
+        entity: sensor.elev_general_average
+        name: "Media Generală"
+        icon: mdi:calculator-variant
+        color: green
+      - type: tile
+        entity: sensor.elev_last_grade
+        name: "Ultima Notă"
+        icon: mdi:school
+        color: blue
+      - type: tile
+        entity: sensor.elev_absences
+        name: "Absențe Total"
+        icon: mdi:account-cancel
+        color: red
+
+  - type: entities
+    title: "📋 Detalii Ultima Notă & Absențe"
+    entities:
+      - entity: sensor.elev_last_grade
+        name: "Ultima evaluare"
+        secondary_info: last-changed
+      - entity: binary_sensor.elev_new_grade_today
+        name: "Notă primită astăzi"
+      - entity: binary_sensor.elev_absence_today
+        name: "Absență înregistrată astăzi"
+      - entity: binary_sensor.elev_school_day
+        name: "Zi de școală astăzi"
+
+---
+
+# ------------------------------------------------------------------------------
+# 3. TEME PENTRU ACASĂ (HOMEWORK TO-DO)
+# Card nativ Home Assistant To-Do List pentru temele de acasă.
+# ------------------------------------------------------------------------------
+type: todo-list
+entity: todo.elev_homework
+title: "📝 Teme pentru Acasă Active"
+
+---
+
+# ------------------------------------------------------------------------------
+# 4. CARD TEME PENTRU ACASĂ DETALIATE (MARKDOWN)
+# Afișează temele cu disciplina, data limită și descrierea cerințelor.
+# ------------------------------------------------------------------------------
+type: markdown
+title: "📝 Teme pentru Acasă"
+content: >
+  {% set items = state_attr('sensor.elev_today_lessons', 'homework') or [] %}
+  {% if states('todo.elev_homework') | int(0) > 0 %}
+    Sunt **{{ states('todo.elev_homework') }}** sarcini active de învățare.
+    Verificați cardul [To-Do](#) pentru a marca temele finalizate.
+  {% else %}
+    🎉 *Toate temele pentru acasă sunt completate!*
+  {% endif %}

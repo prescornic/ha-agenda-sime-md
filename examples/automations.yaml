@@ -1,0 +1,83 @@
+# ==============================================================================
+# AGENDA SIME MD — AUTOMATION RECIPES
+# ==============================================================================
+# Replace 'elev' with your student's entity slug
+# (e.g. binary_sensor.roman_prescornic_absence_today).
+# Replace 'notify.notify' with your mobile app service
+# (e.g. notify.mobile_app_iphone_parinte).
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. ALERTĂ INSTANTANEE: ABSENȚĂ ÎNREGISTRATĂ ÎN TIMPUL ZILEI
+# Trimite imediat o alertă pe telefon când elevul lipsește de la o oră.
+# ------------------------------------------------------------------------------
+- id: agenda_sime_alert_absenta_astazi
+  alias: "SIME MD: Alertă absență astăzi"
+  description: "Trimite o notificare imediat ce este consemnată o absență în catalogul electronic."
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.elev_absence_today
+      to: "on"
+  action:
+    - service: notify.notify
+      data:
+        title: "⚠️ Alertă Școlară: Absență Consemnată"
+        message: >
+          A fost înregistrată o nouă absență în catalogul electronic astăzi!
+          Total absențe în semestru: {{ states('sensor.elev_absences') }}.
+        data:
+          push:
+            sound: "critical"
+          actions:
+            - action: "URI"
+              title: "Deschide Agenda"
+              uri: "https://agenda.sime.md"
+
+# ------------------------------------------------------------------------------
+# 2. NOTIFICARE: NOTĂ NOUĂ PRIMITĂ ÎN CATALOG
+# Trimite o alertă imediat ce profesorul a introdus o notă la orice materie.
+# ------------------------------------------------------------------------------
+- id: agenda_sime_notificare_nota_noua
+  alias: "SIME MD: Notificare notă nouă"
+  description: "Trimite un mesaj cu nota primită, materia și tema evaluării."
+  trigger:
+    - platform: state
+      entity_id: sensor.elev_last_grade
+  condition:
+    - condition: template
+      value_template: "{{ trigger.to_state.state not in ['unknown', 'unavailable', ''] }}"
+    - condition: template
+      value_template: "{{ trigger.from_state.state != trigger.to_state.state or trigger.from_state.attributes.get('subject') != trigger.to_state.attributes.get('subject') }}"
+  action:
+    - service: notify.notify
+      data:
+        title: "🎓 Notă nouă: {{ trigger.to_state.state }}"
+        message: >
+          Disciplina: {{ trigger.to_state.attributes.subject | default('Nespecificat') }}
+          Data: {{ trigger.to_state.attributes.date | default(now().strftime('%d.%m.%Y')) }}
+          {% if trigger.to_state.attributes.topic %}Temă: {{ trigger.to_state.attributes.topic }}{% endif %}
+          Media generală curentă: {{ states('sensor.elev_general_average') }}
+
+# ------------------------------------------------------------------------------
+# 3. RECAPITULARE MATINALĂ: ORARUL ZILEI (LA ORA 07:30)
+# În zilele de școală, trimite orarul și temele lecțiilor pentru ziua respectivă.
+# ------------------------------------------------------------------------------
+- id: agenda_sime_orar_matinal
+  alias: "SIME MD: Orarul zilei de școală"
+  description: "Trimitere orar și teme matinale la ora 07:30 dacă astăzi este zi de școală."
+  trigger:
+    - platform: time
+      at: "07:30:00"
+  condition:
+    - condition: state
+      entity_id: binary_sensor.elev_school_day
+      state: "on"
+  action:
+    - service: notify.notify
+      data:
+        title: "📚 Orarul pentru astăzi ({{ states('sensor.elev_today_lessons') }} ore)"
+        message: >
+          {% set lessons = state_attr('sensor.elev_today_lessons', 'lessons') or [] %}
+          {% for l in lessons %}
+            {{ loop.index }}. {{ l.subject }} ({{ l.classroom or '-' }})
+          {% endfor %}
