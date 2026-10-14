@@ -12,8 +12,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from lib.agenda_sime_md.models import SimeLesson, SimeSubjectGrades
-
+from .agenda_sime_md.models import SimeLesson, SimeSubjectGrades
 from .const import DOMAIN
 from .coordinator import SimeDataUpdateCoordinator
 from .entity import SimeEntity

@@ -4,27 +4,24 @@ Standalone asynchronous client library for agenda.sime.md
 (Sistemul Informațional de Management în Educație din Republica Moldova).
 """
 
-from .auth import SimeAuthManager
-from .client import SimeClient
-from .exceptions import (
-    SimeAuthError,
-    SimeConnectionError,
-    SimeError,
-    SimeParseError,
-    SimeRateLimitError,
-)
-from .models import (
+from custom_components.agenda_sime_md.agenda_sime_md import (
     SimeAbsenceSummary,
     SimeAccountRole,
+    SimeAuthError,
+    SimeAuthManager,
+    SimeClient,
+    SimeConnectionError,
+    SimeError,
     SimeHomework,
     SimeLesson,
+    SimeParseError,
+    SimeRateLimitError,
     SimeRecentGrade,
     SimeStudent,
     SimeStudentData,
     SimeSubjectGrades,
+    __version__,
 )
-
-__version__ = "0.1.0"
 
 __all__ = [
     "SimeAbsenceSummary",
@@ -42,4 +39,5 @@ __all__ = [
     "SimeStudent",
     "SimeStudentData",
     "SimeSubjectGrades",
+    "__version__",
 ]

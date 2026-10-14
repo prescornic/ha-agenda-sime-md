@@ -14,15 +14,14 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from lib.agenda_sime_md.client import SimeClient
-from lib.agenda_sime_md.exceptions import (
+from .agenda_sime_md.client import SimeClient
+from .agenda_sime_md.exceptions import (
     SimeAuthError,
     SimeConnectionError,
     SimeError,
     SimeRateLimitError,
 )
-from lib.agenda_sime_md.models import SimeAccountRole, SimeStudent
-
+from .agenda_sime_md.models import SimeAccountRole, SimeStudent
 from .const import (
     CONF_DAY_END_HOUR,
     CONF_DAY_START_HOUR,

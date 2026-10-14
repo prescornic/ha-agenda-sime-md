@@ -10,9 +10,8 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
-from lib.agenda_sime_md.client import SimeClient
-from lib.agenda_sime_md.models import SimeAccountRole
-
+from .agenda_sime_md.client import SimeClient
+from .agenda_sime_md.models import SimeAccountRole
 from .const import (
     CONF_ROLE,
     CONF_STUDENTS,
