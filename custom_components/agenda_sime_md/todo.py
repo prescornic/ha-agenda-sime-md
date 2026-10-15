@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import date, datetime
+from typing import Any
 
 from homeassistant.components.todo import (
     TodoItem,
@@ -76,14 +77,38 @@ class SimeHomeworkTodoList(SimeEntity, TodoListEntity):
             uid = hashlib.sha1(raw_id.encode("utf-8")).hexdigest()[:16]
             due = _parse_due_date(hw.due_date_str)
 
+            clean_desc = hw.description.strip()
+            if clean_desc.lower().startswith(f"{hw.subject.lower()}:"):
+                clean_desc = clean_desc[len(hw.subject) + 1 :].strip()
+
             items.append(
                 TodoItem(
                     uid=uid,
-                    summary=f"{hw.subject}: {hw.description}",
+                    summary=clean_desc,
                     status=TodoItemStatus.NEEDS_ACTION,
                     due=due,
-                    description=f"Termen: {hw.due_date_str}\nDisciplină: {hw.subject}",
+                    description=f"Disciplină: {hw.subject}\nTermen: {hw.due_date_str}",
                 )
             )
 
         return items
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return homework assignments as attributes for easy dashboard card access."""
+        if not self.student_data or not self.student_data.homework:
+            return {"items": [], "homework": [], "count": 0}
+
+        hw_list = [
+            {
+                "subject": hw.subject,
+                "due_date": hw.due_date_str,
+                "description": hw.description,
+            }
+            for hw in self.student_data.homework
+        ]
+        return {
+            "items": hw_list,
+            "homework": hw_list,
+            "count": len(hw_list),
+        }

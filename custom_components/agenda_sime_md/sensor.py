@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any
 
-from homeassistant.components.sensor import SensorEntity
+from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -16,6 +16,19 @@ from .agenda_sime_md.models import SimeLesson, SimeSubjectGrades
 from .const import DOMAIN
 from .coordinator import SimeDataUpdateCoordinator
 from .entity import SimeEntity
+
+
+def _parse_date(date_str: str | None) -> date | None:
+    """Attempt to parse date from common Moldovan date formats."""
+    if not date_str:
+        return None
+    clean = date_str.strip().rstrip(":")
+    for fmt in ("%d.%m.%Y", "%Y-%m-%d", "%d/%m/%Y"):
+        try:
+            return datetime.strptime(clean, fmt).date()
+        except ValueError:
+            pass
+    return None
 
 
 async def async_setup_entry(
@@ -33,6 +46,7 @@ async def async_setup_entry(
         entities.extend(
             [
                 SimeLatestGradeSensor(coordinator, student_id),
+                SimeLatestGradeDateSensor(coordinator, student_id),
                 SimeGpaSensor(coordinator, student_id),
                 SimeAbsencesSensor(coordinator, student_id),
                 SimeTodayLessonsSensor(coordinator, student_id),
@@ -100,6 +114,7 @@ class SimeLatestGradeSensor(SimeEntity, SensorEntity):
             top = self.student_data.recent_grades[0]
             attrs["subject"] = top.subject
             attrs["date"] = top.date_str
+            attrs["evaluation_date"] = top.date_str
             attrs["recent_grades"] = [
                 {
                     "date": g.date_str,
@@ -108,6 +123,39 @@ class SimeLatestGradeSensor(SimeEntity, SensorEntity):
                 }
                 for g in self.student_data.recent_grades
             ]
+        return attrs
+
+
+class SimeLatestGradeDateSensor(SimeEntity, SensorEntity):
+    """Sensor exposing the date when the latest qualification was awarded."""
+
+    _attr_translation_key = "latest_grade_date"
+    _attr_icon = "mdi:calendar-star"
+    _attr_device_class = SensorDeviceClass.DATE
+
+    def __init__(
+        self, coordinator: SimeDataUpdateCoordinator, student_id: str
+    ) -> None:
+        """Initialize latest grade date sensor."""
+        super().__init__(coordinator, student_id)
+        self._attr_unique_id = f"{student_id}_latest_grade_date"
+
+    @property
+    def native_value(self) -> date | None:
+        """Return the date of the latest recorded grade."""
+        if self.student_data and self.student_data.recent_grades:
+            return _parse_date(self.student_data.recent_grades[0].date_str)
+        return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return additional details about the latest evaluation."""
+        attrs: dict[str, Any] = {}
+        if self.student_data and self.student_data.recent_grades:
+            top = self.student_data.recent_grades[0]
+            attrs["date_str"] = top.date_str
+            attrs["subject"] = top.subject
+            attrs["grade"] = top.grade
         return attrs
 
 
@@ -283,14 +331,25 @@ class SimeTodayLessonsSensor(SimeEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return lesson list with past, current, and upcoming status flags."""
+        """Return lesson list with status flags, plus active homework assignments."""
         now = dt_util.now()
         lessons_list = [
             _format_lesson_dict(lesson, now) for lesson in self._today_lessons
         ]
+        hw_list = []
+        if self.student_data and self.student_data.homework:
+            hw_list = [
+                {
+                    "subject": hw.subject,
+                    "due_date": hw.due_date_str,
+                    "description": hw.description,
+                }
+                for hw in self.student_data.homework
+            ]
         return {
             "date": dt_util.now().date().isoformat(),
             "lessons": lessons_list,
+            "homework": hw_list,
         }
 
 

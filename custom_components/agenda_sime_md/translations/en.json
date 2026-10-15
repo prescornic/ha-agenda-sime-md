@@ -56,6 +56,9 @@
       "latest_grade": {
         "name": "Latest Grade"
       },
+      "latest_grade_date": {
+        "name": "Latest Grade Date"
+      },
       "general_average": {
         "name": "General Average"
       },

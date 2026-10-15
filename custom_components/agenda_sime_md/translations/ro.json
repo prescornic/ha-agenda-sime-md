@@ -56,6 +56,9 @@
       "latest_grade": {
         "name": "Ultima notă"
       },
+      "latest_grade_date": {
+        "name": "Data ultimei note"
+      },
       "general_average": {
         "name": "Media generală"
       },

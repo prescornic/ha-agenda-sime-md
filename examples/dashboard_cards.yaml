@@ -15,44 +15,59 @@
 # ------------------------------------------------------------------------------
 type: markdown
 title: "📚 Orar & Teme Lecții"
-content: >
-  {% set today = state_attr('sensor.elev_today_lessons', 'lessons') or [] %}
-  {% set next_day = state_attr('sensor.elev_next_day_lessons', 'lessons') or [] %}
-  {% set next_date = state_attr('sensor.elev_next_day_lessons', 'date') %}
+content: |
+  {% set today = state_attr('sensor.elev_today_lessons', 'lessons') or [] -%}
+  {% set next_day = state_attr('sensor.elev_next_day_lessons', 'lessons') or [] -%}
+  {% set next_date = state_attr('sensor.elev_next_day_lessons', 'date') -%}
+  {% set max_topic_len = 40 -%}
 
   ### 📅 Lecțiile de Astăzi ({{ states('sensor.elev_today_lessons') }} lecții)
-  {% if today | length > 0 %}
-    | Oră | Disciplină | Sala | Temă / Subiect | Stare |
-    | :--- | :--- | :--- | :--- | :--- |
-    {% for l in today %}
-      {% set start = as_datetime(l.start_time).strftime('%H:%M') if l.start_time else '--:--' %}
-      {% set end = as_datetime(l.end_time).strftime('%H:%M') if l.end_time else '--:--' %}
-      {% if l.status == 'current' %}
-        {% set status_badge = '<span style="color:#ef4444;font-weight:bold;">🔴 În desfășurare</span>' %}
-      {% elif l.status == 'past' %}
-        {% set status_badge = '<span style="color:#9ca3af;">⚪ Încheiată</span>' %}
-      {% else %}
-        {% set status_badge = '<span style="color:#3b82f6;">🔵 Urmează</span>' %}
-      {% endif %}
-      | **{{ start }}-{{ end }}** | {{ l.subject }} | {{ l.classroom or '-' }} | *{{ l.topic or '-' }}* | {{ status_badge }} |
-    {% endfor %}
-  {% else %}
-    *Nu sunt lecții programate pentru astăzi.*
+  {% if today | length > 0 -%}
+  | Oră | Disciplină | Sala | Temă / Subiect | Stare |
+  | :--- | :--- | :--- | :--- | :--- |
+  {% for l in today -%}
+    {%- set start = as_datetime(l.start_time).strftime('%H:%M') if l.start_time else '--:--' -%}
+    {%- set end = as_datetime(l.end_time).strftime('%H:%M') if l.end_time else '--:--' -%}
+    {%- if l.status == 'current' -%}
+      {%- set status_badge = '<span style="color:#ef4444;font-weight:bold;">🔴 În desfășurare</span>' -%}
+    {%- elif l.status == 'past' -%}
+      {%- set status_badge = '<span style="color:#9ca3af;">⚪ Încheiată</span>' -%}
+    {%- else -%}
+      {%- set status_badge = '<span style="color:#3b82f6;">🔵 Urmează</span>' -%}
+    {%- endif -%}
+    {%- if l.topic -%}
+      {%- set full_topic = l.topic | replace('"', '&quot;') | replace('\r\n', ' ') | replace('\n', ' ') -%}
+      {%- set short_topic = l.topic | replace('\r\n', ' ') | replace('\n', ' ') | truncate(max_topic_len, True, '...') -%}
+      {%- set topic = '<span title="' ~ full_topic ~ '">*' ~ short_topic ~ '*</span>' -%}
+    {%- else -%}
+      {%- set topic = '-' -%}
+    {%- endif -%}
+  | **{{ start }}-{{ end }}** | {{ l.subject }} | {{ l.classroom or '-' }} | {{ topic }} | {{ status_badge }} |
+  {% endfor -%}
+  {% else -%}
+  *Nu sunt lecții programate pentru astăzi.*
   {% endif %}
 
   ---
 
   ### ⏭️ Următoarea Zi de Școală ({% if next_date %}{{ as_datetime(next_date).strftime('%d.%m.%Y') }}{% else %}—{% endif %})
-  {% if next_day | length > 0 %}
-    | Oră | Disciplină | Sala | Temă / Subiect |
-    | :--- | :--- | :--- | :--- |
-    {% for l in next_day %}
-      {% set start = as_datetime(l.start_time).strftime('%H:%M') if l.start_time else '--:--' %}
-      {% set end = as_datetime(l.end_time).strftime('%H:%M') if l.end_time else '--:--' %}
-      | **{{ start }}-{{ end }}** | {{ l.subject }} | {{ l.classroom or '-' }} | *{{ l.topic or '-' }}* |
-    {% endfor %}
-  {% else %}
-    *Nu sunt date disponibile pentru următoarea zi de școală.*
+  {% if next_day | length > 0 -%}
+  | Oră | Disciplină | Sala | Temă / Subiect |
+  | :--- | :--- | :--- | :--- |
+  {% for l in next_day -%}
+    {%- set start = as_datetime(l.start_time).strftime('%H:%M') if l.start_time else '--:--' -%}
+    {%- set end = as_datetime(l.end_time).strftime('%H:%M') if l.end_time else '--:--' -%}
+    {%- if l.topic -%}
+      {%- set full_topic = l.topic | replace('"', '&quot;') | replace('\r\n', ' ') | replace('\n', ' ') -%}
+      {%- set short_topic = l.topic | replace('\r\n', ' ') | replace('\n', ' ') | truncate(max_topic_len, True, '...') -%}
+      {%- set topic = '<span title="' ~ full_topic ~ '">*' ~ short_topic ~ '*</span>' -%}
+    {%- else -%}
+      {%- set topic = '-' -%}
+    {%- endif -%}
+  | **{{ start }}-{{ end }}** | {{ l.subject }} | {{ l.classroom or '-' }} | {{ topic }} |
+  {% endfor -%}
+  {% else -%}
+  *Nu sunt date disponibile pentru următoarea zi de școală.*
   {% endif %}
 
 ---
@@ -84,11 +99,12 @@ cards:
         color: red
 
   - type: entities
-    title: "📋 Detalii Ultima Notă & Absențe"
+    title: "📋 Detalii Situație Școlară"
     entities:
-      - entity: sensor.elev_last_grade
-        name: "Ultima evaluare"
-        secondary_info: last-changed
+      - entity: sensor.elev_latest_grade
+        name: "Ultima notă"
+      - entity: sensor.elev_latest_grade_date
+        name: "Data ultimei note"
       - entity: binary_sensor.elev_new_grade_today
         name: "Notă primită astăzi"
       - entity: binary_sensor.elev_absence_today
@@ -110,15 +126,41 @@ title: "📝 Teme pentru Acasă Active"
 
 # ------------------------------------------------------------------------------
 # 4. CARD TEME PENTRU ACASĂ DETALIATE (MARKDOWN)
-# Afișează temele cu disciplina, data limită și descrierea cerințelor.
+# Afișează tabelul cu temele active, disciplina, data limită și descrierea cerințelor.
 # ------------------------------------------------------------------------------
 type: markdown
 title: "📝 Teme pentru Acasă"
-content: >
-  {% set items = state_attr('sensor.elev_today_lessons', 'homework') or [] %}
-  {% if states('todo.elev_homework') | int(0) > 0 %}
-    Sunt **{{ states('todo.elev_homework') }}** sarcini active de învățare.
-    Verificați cardul [To-Do](#) pentru a marca temele finalizate.
-  {% else %}
-    🎉 *Toate temele pentru acasă sunt completate!*
-  {% endif %}
+content: |
+  {% set items = state_attr('todo.elev_homework', 'items') or state_attr('sensor.elev_today_lessons', 'homework') or [] -%}
+  {%- if items | length > 0 -%}
+  Sunt **{{ items | length }}** sarcini active de învățare:
+
+  | Disciplină | Termen | Temă / Cerințe |
+  | :--- | :--- | :--- |
+  {% for hw in items -%}
+    {%- set clean_desc = hw.description | replace('\r\n', ' ') | replace('\n', ' ') -%}
+  | **{{ hw.subject }}** | {{ hw.due_date }} | {{ clean_desc }} |
+  {% endfor -%}
+  {%- else -%}
+  🎉 *Toate temele pentru acasă sunt completate!*
+  {%- endif -%}
+
+---
+
+# ------------------------------------------------------------------------------
+# 5. NOTE RECENTE (TABEL DETALIAT MARKDOWN)
+# Afișează ultimele calificative primite cu data, disciplina și nota.
+# ------------------------------------------------------------------------------
+type: markdown
+title: "🎓 Note Recente"
+content: |
+  {% set grades = state_attr('sensor.elev_latest_grade', 'recent_grades') or [] -%}
+  {%- if grades | length > 0 -%}
+  | Dată | Disciplină | Notă |
+  | :--- | :--- | :--- |
+  {% for g in grades -%}
+  | {{ g.date }} | {{ g.subject }} | **{{ g.grade }}** |
+  {% endfor -%}
+  {%- else -%}
+  *Nu există note recente înregistrate.*
+  {%- endif -%}

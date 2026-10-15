@@ -60,6 +60,10 @@ async def test_todo_homework_items(hass: HomeAssistant):
     todo_state = hass.states.get("todo.elev_exemplar_homework")
     assert todo_state is not None
     assert int(todo_state.state) == 2
+    assert len(todo_state.attributes["items"]) == 2
+    assert todo_state.attributes["items"][0]["subject"] == "Matematică"
+    assert todo_state.attributes["homework"] == todo_state.attributes["items"]
+    assert todo_state.attributes["count"] == 2
 
     coordinator = hass.data[DOMAIN][entry.entry_id]
     from custom_components.agenda_sime_md.todo import SimeHomeworkTodoList
@@ -68,8 +72,9 @@ async def test_todo_homework_items(hass: HomeAssistant):
     items = todo_entity.todo_items
     assert len(items) == 2
 
-    math_item = next(i for i in items if "Matematică" in i.summary)
+    math_item = next(i for i in items if "Matematică" in (i.description or ""))
     assert "Exercițiile 1-5" in math_item.summary
+    assert math_item.summary == "Exercițiile 1-5 de la pagina 45"
     assert math_item.status == TodoItemStatus.NEEDS_ACTION
     assert math_item.due is not None
     assert math_item.due.day == 16

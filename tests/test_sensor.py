@@ -16,6 +16,7 @@ from custom_components.agenda_sime_md.const import (
 )
 from lib.agenda_sime_md.models import (
     SimeAbsenceSummary,
+    SimeHomework,
     SimeLesson,
     SimeRecentGrade,
     SimeStudent,
@@ -108,13 +109,21 @@ def create_sample_student_data() -> SimeStudentData:
         ),
     ]
 
+    homework = [
+        SimeHomework(
+            due_date_str="16.10.2026",
+            subject="Matematică",
+            description="Exercițiile 1-5 de la pagina 45",
+        )
+    ]
+
     return SimeStudentData(
         student=student,
         recent_grades=recent_grades,
         subjects=subjects,
         general_average=9.34,
         absence_summary=absences,
-        homework=[],
+        homework=homework,
         timetable=timetable,
     )
 
@@ -153,6 +162,15 @@ async def test_sensors_setup_and_states(hass: HomeAssistant):
     assert latest_grade.state == "10.0"
     assert latest_grade.attributes["subject"] == "Matematică"
     assert latest_grade.attributes["date"] == "15.10.2026"
+    assert latest_grade.attributes["evaluation_date"] == "15.10.2026"
+
+    # 1b. Latest grade date sensor
+    latest_grade_date = hass.states.get("sensor.elev_exemplar_latest_grade_date")
+    assert latest_grade_date is not None
+    assert latest_grade_date.state == "2026-10-15"
+    assert latest_grade_date.attributes["date_str"] == "15.10.2026"
+    assert latest_grade_date.attributes["subject"] == "Matematică"
+    assert latest_grade_date.attributes["grade"] == 10.0
 
     # 2. General average GPA sensor
     gpa = hass.states.get("sensor.elev_exemplar_general_average")
@@ -189,6 +207,10 @@ async def test_sensors_setup_and_states(hass: HomeAssistant):
     assert "past" in statuses
     assert "current" in statuses
     assert "upcoming" in statuses
+    # Check homework attribute
+    hw_attr = today_lessons.attributes["homework"]
+    assert len(hw_attr) == 1
+    assert hw_attr[0]["subject"] == "Matematică"
 
     # 6. Next active school day lessons sensor
     next_day_lessons = hass.states.get("sensor.elev_exemplar_next_school_day_lessons")
