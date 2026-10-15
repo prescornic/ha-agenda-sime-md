@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agenda-sime-md"
+version = "0.1.0"
+description = "Asynchronous Python client library for agenda.sime.md (Moldova Electronic School Agenda)"
+readme = "README.md"
+license = "MIT"
+authors = [
+    { name = "Andrei Prescornic" }
+]
+keywords = ["agenda", "sime", "moldova", "school", "education", "api", "client"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+]
+requires-python = ">=3.12"
+dependencies = [
+    "aiohttp>=3.9.0",
+    "beautifulsoup4>=4.12.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/prescornic/ha-agenda-sime-md"
+Repository = "https://github.com/prescornic/agenda-sime-md-py"
+Issues = "https://github.com/prescornic/ha-agenda-sime-md/issues"

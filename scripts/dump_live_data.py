@@ -6,6 +6,7 @@ import json
 import os
 import re
 import urllib.parse
+
 import aiohttp
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -107,7 +108,7 @@ async def get_authenticated_page(session: aiohttp.ClientSession | None = None):
 
 
 async def main():
-    html, url, _ = await get_authenticated_page()
+    html, _url, _ = await get_authenticated_page()
     soup = BeautifulSoup(html, "html.parser")
     
     print("=== EXPLORING SECTIONS IN AUTHENTICATED PAGE ===")

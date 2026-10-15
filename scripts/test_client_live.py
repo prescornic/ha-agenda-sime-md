@@ -8,6 +8,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__) + "/.."))
 
 from dotenv import load_dotenv
+
 from lib.agenda_sime_md import SimeAccountRole, SimeClient
 
 load_dotenv()

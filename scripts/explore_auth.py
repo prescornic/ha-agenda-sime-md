@@ -6,6 +6,7 @@ import json
 import os
 import re
 import urllib.parse
+
 import aiohttp
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
@@ -32,9 +33,9 @@ async def login(session: aiohttp.ClientSession, username: str, password: str, us
     """Perform Oracle APEX login for parent (user_type=1) or student (user_type=2)."""
     role_name = "Parent" if user_type == "1" else "Student"
     user_type_name = "Autentificare părinte" if user_type == "1" else "Autentificare elev"
-    print(f"\n=======================================================")
+    print("\n=======================================================")
     print(f"AUTHENTICATING AS {role_name.upper()}: {username}")
-    print(f"=======================================================")
+    print("=======================================================")
 
     # Step 1: Fetch public portal page
     async with session.get(f"{BASE_URL}/ords/r/agenda/main/public") as r:
@@ -136,7 +137,7 @@ async def login(session: aiohttp.ClientSession, username: str, password: str, us
                     try:
                         decoded_msg = base64.b64decode(raw_msg + "==").decode("utf-8", errors="ignore")
                         print(f"ALERT / ERROR MESSAGE: {decoded_msg}")
-                    except Exception as e:
+                    except (ValueError, TypeError) as e:
                         print("Failed to decode message:", e)
             raise RuntimeError(f"Login did not return standard redirect URL: {redirect_script}")
 
@@ -148,9 +149,9 @@ async def login(session: aiohttp.ClientSession, username: str, password: str, us
 
 async def inspect_portal(session: aiohttp.ClientSession, url: str):
     """Fetch and inspect logged-in portal page."""
-    print(f"\n=======================================================")
+    print("\n=======================================================")
     print(f"INSPECTING PORTAL PAGE: {url}")
-    print(f"=======================================================")
+    print("=======================================================")
     async with session.get(url) as resp:
         print(f"Status: {resp.status}")
         print(f"Final URL: {resp.url}")
@@ -171,7 +172,7 @@ async def inspect_portal(session: aiohttp.ClientSession, url: str):
         for a in soup.find_all("a", href=True):
             text = a.get_text(strip=True)
             href = a["href"]
-            if href.startswith("javascript:") or href.startswith("#"):
+            if href.startswith(("javascript:", "#")):
                 continue
             key = (text, href)
             if key not in found_links:
@@ -199,7 +200,7 @@ async def main():
             try:
                 portal_url = await login(session_parent, USERNAME, PASSWORD, user_type="1")
                 await inspect_portal(session_parent, portal_url)
-            except Exception as e:
+            except (aiohttp.ClientError, RuntimeError) as e:
                 print(f"Parent login test failed: {e}")
 
     # 2. Test Student Login
@@ -208,7 +209,7 @@ async def main():
             try:
                 portal_url = await login(session_student, USERNAME_STUDENT, PASSWORD_STUDENT, user_type="2")
                 await inspect_portal(session_student, portal_url)
-            except Exception as e:
+            except (aiohttp.ClientError, RuntimeError) as e:
                 print(f"Student login test failed: {e}")
 
 
