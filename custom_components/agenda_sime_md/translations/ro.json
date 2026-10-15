@@ -74,13 +74,25 @@
     },
     "binary_sensor": {
       "absence_today": {
-        "name": "Absență astăzi"
+        "name": "Absență astăzi",
+        "state": {
+          "off": "Nu",
+          "on": "Da"
+        }
       },
       "new_grade_today": {
-        "name": "Notă nouă astăzi"
+        "name": "Notă nouă astăzi",
+        "state": {
+          "off": "Nu",
+          "on": "Da"
+        }
       },
       "school_day": {
-        "name": "Zi de școală"
+        "name": "Zi de școală",
+        "state": {
+          "off": "Nu",
+          "on": "Da"
+        }
       }
     },
     "calendar": {

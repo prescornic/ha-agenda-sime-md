@@ -74,13 +74,25 @@
     },
     "binary_sensor": {
       "absence_today": {
-        "name": "Absence Today"
+        "name": "Absence Today",
+        "state": {
+          "off": "No",
+          "on": "Yes"
+        }
       },
       "new_grade_today": {
-        "name": "New Grade Today"
+        "name": "New Grade Today",
+        "state": {
+          "off": "No",
+          "on": "Yes"
+        }
       },
       "school_day": {
-        "name": "School Day"
+        "name": "School Day",
+        "state": {
+          "off": "No",
+          "on": "Yes"
+        }
       }
     },
     "calendar": {

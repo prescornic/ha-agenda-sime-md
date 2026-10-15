@@ -4,10 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
-    BinarySensorEntity,
-)
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -43,7 +40,6 @@ class SimeAbsenceTodayBinarySensor(SimeEntity, BinarySensorEntity):
     """Binary sensor indicating if an absence is recorded for the student today."""
 
     _attr_translation_key = "absence_today"
-    _attr_device_class = BinarySensorDeviceClass.PROBLEM
     _attr_icon = "mdi:account-cancel"
 
     def __init__(

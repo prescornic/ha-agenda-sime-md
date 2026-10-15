@@ -74,13 +74,25 @@
     },
     "binary_sensor": {
       "absence_today": {
-        "name": "Пропуск сегодня"
+        "name": "Пропуск сегодня",
+        "state": {
+          "off": "Нет",
+          "on": "Да"
+        }
       },
       "new_grade_today": {
-        "name": "Новая оценка сегодня"
+        "name": "Новая оценка сегодня",
+        "state": {
+          "off": "Нет",
+          "on": "Да"
+        }
       },
       "school_day": {
-        "name": "Учебный день"
+        "name": "Учебный день",
+        "state": {
+          "off": "Нет",
+          "on": "Да"
+        }
       }
     },
     "calendar": {
