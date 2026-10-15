@@ -29,7 +29,8 @@ HEADERS = {
 
 async def get_authenticated_page(session: aiohttp.ClientSession | None = None):
     if session is None:
-        session = aiohttp.ClientSession(headers=HEADERS)
+        connector = aiohttp.TCPConnector(resolver=aiohttp.ThreadedResolver())
+        session = aiohttp.ClientSession(headers=HEADERS, connector=connector)
 
     # Public
     async with session.get(f"{BASE_URL}/ords/r/agenda/main/public") as r:

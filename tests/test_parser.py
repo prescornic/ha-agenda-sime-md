@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 
 from lib.agenda_sime_md.parser import (
     parse_absences_summary,
+    parse_calendar_events,
     parse_homework,
     parse_recent_grades,
     parse_semester_grades_table,
@@ -138,3 +139,49 @@ def test_parse_absences():
     assert summary.total_motivated == 2
     assert summary.total_unmotivated == 1
     assert summary.total == 3
+
+
+def test_parse_calendar_events():
+    events_raw = [
+        {
+            "start": "2026-10-15T09:00:00",
+            "end": "2026-10-15T09:45:00",
+            "allDay": False,
+            "title": (
+                '<div class="lesson-card">'
+                '<div class="lesson-left">'
+                '<div class="lesson-order">2</div>'
+                '<div class="lesson-time"><span>09:00</span><span>09:45</span></div>'
+                "</div>"
+                '<div class="lesson-right">'
+                '<div class="lesson-line1">'
+                '<span class="lesson-text-wrap">Matematică</span>'
+                '<span class="lesson-room">101</span>'
+                "</div>"
+                '<div class="lesson-line2"><span class="lesson-teacher">Profesor Exemplu</span></div>'
+                '<div class="lesson-line3"><span class="lesson-homework">Exercițiile 1-5 pag 20</span></div>'
+                "</div></div>"
+            ),
+            "url": (
+                "javascript:apex.theme42.dialog("
+                "'\\u002Fords\\u002Fr\\u002Fagenda\\u002Fmain\\u002Fcalendar-info?"
+                "p19_orar_id=ORAR0000000001\\u0026p19_lesson_date=15.10.2026"
+                "\\u0026session=0000000000000\\u0026cs=ANON_CHECKSUM',"
+                "{title:'Detalii'},'','#orar_calendar_calendar')"
+            ),
+        }
+    ]
+
+    lessons = parse_calendar_events(events_raw)
+    assert len(lessons) == 1
+    lesson = lessons[0]
+    assert lesson.id == "ORAR0000000001_15.10.2026"
+    assert lesson.subject == "Matematică"
+    assert lesson.classroom == "101"
+    assert lesson.teacher == "Profesor Exemplu"
+    assert lesson.topic == "Exercițiile 1-5 pag 20"
+    assert lesson.start_time.hour == 9
+    assert lesson.start_time.minute == 0
+    assert lesson.end_time.hour == 9
+    assert lesson.end_time.minute == 45
+    assert lesson.start_time.tzinfo is not None

@@ -225,10 +225,18 @@ class SimeSubjectAverageSensor(SimeEntity, SensorEntity):
 
 def _format_lesson_dict(lesson: SimeLesson, now: datetime) -> dict[str, Any]:
     """Format lesson object into dictionary with dynamic status color coding."""
+    start_time = lesson.start_time
+    end_time = lesson.end_time
+    if now.tzinfo is not None and end_time.tzinfo is None:
+        end_time = end_time.replace(tzinfo=now.tzinfo)
+        start_time = start_time.replace(tzinfo=now.tzinfo)
+    elif now.tzinfo is None and end_time.tzinfo is not None:
+        now = now.replace(tzinfo=end_time.tzinfo)
+
     status = "upcoming"
-    if now > lesson.end_time:
+    if now > end_time:
         status = "past"
-    elif lesson.start_time <= now <= lesson.end_time:
+    elif start_time <= now <= end_time:
         status = "current"
 
     return {

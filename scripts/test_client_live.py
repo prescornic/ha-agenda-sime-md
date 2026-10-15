@@ -55,6 +55,26 @@ async def main():
             print(f"  Due: {hw.due_date_str} | Subject: {hw.subject}")
             print(f"    Task: {hw.description}")
 
+        print(f"\n--- Timetable Lessons ({len(data.timetable)} total) ---")
+        from datetime import datetime
+        today = datetime.now().date()
+        today_lessons = [l for l in data.timetable if l.start_time.date() == today]
+        print(f"  Today's Lessons ({len(today_lessons)}):")
+        for l in today_lessons:
+            print(f"    [{l.start_time.strftime('%H:%M')}-{l.end_time.strftime('%H:%M')}] {l.subject} (Room: {l.classroom}, Teacher: {l.teacher})")
+            if l.topic:
+                print(f"      Topic/HW: {l.topic}")
+
+        future_lessons = [l for l in data.timetable if l.start_time.date() > today]
+        if future_lessons:
+            next_date = future_lessons[0].start_time.date()
+            next_lessons = [l for l in future_lessons if l.start_time.date() == next_date]
+            print(f"  Next School Day ({next_date}) Lessons ({len(next_lessons)}):")
+            for l in next_lessons:
+                print(f"    [{l.start_time.strftime('%H:%M')}-{l.end_time.strftime('%H:%M')}] {l.subject} (Room: {l.classroom}, Teacher: {l.teacher})")
+                if l.topic:
+                    print(f"      Topic/HW: {l.topic}")
+
     print("\n=== ALL TESTS PASSED SUCCESSFULLY! ===")
 
 

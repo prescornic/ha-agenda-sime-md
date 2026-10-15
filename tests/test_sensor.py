@@ -55,8 +55,8 @@ def create_sample_student_data() -> SimeStudentData:
     now = dt_util.now()
     today = now.date()
     # Lessons for today: 1 past, 1 current, 1 upcoming
-    past_start = datetime.combine(today, datetime.min.time(), tzinfo=dt_util.DEFAULT_TIME_ZONE) + timedelta(hours=8)
-    past_end = past_start + timedelta(minutes=45)
+    past_start = now - timedelta(hours=2)
+    past_end = now - timedelta(hours=1, minutes=15)
 
     curr_start = now - timedelta(minutes=10)
     curr_end = now + timedelta(minutes=35)

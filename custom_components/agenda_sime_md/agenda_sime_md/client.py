@@ -6,6 +6,7 @@ import json
 import logging
 import re
 import urllib.parse
+from datetime import datetime, timedelta
 from typing import Self
 
 import aiohttp
@@ -15,6 +16,7 @@ from .auth import BASE_URL, SimeAuthManager
 from .exceptions import SimeConnectionError
 from .models import (
     SimeAccountRole,
+    SimeLesson,
     SimeStudent,
     SimeStudentData,
     SimeSubjectGrades,
@@ -22,6 +24,7 @@ from .models import (
 from .parser import (
     get_input_value,
     parse_absences_summary,
+    parse_calendar_events,
     parse_homework,
     parse_recent_grades,
     parse_semester_grades_table,
@@ -275,6 +278,51 @@ class SimeClient:
         averages = [s.average for s in subjects.values() if s.average is not None]
         general_avg = round(sum(averages) / len(averages), 2) if averages else None
 
+        # 7. Fetch Timetable / Agenda Calendar
+        timetable: list[SimeLesson] = []
+        fc_match = re.search(
+            r'apex\.widget\.fullCalendar\(\{.*?\"ajaxIdentifier\":\"([^\"]+)\"',
+            html,
+            re.DOTALL,
+        )
+        if fc_match and session_id and eleve_id:
+            fc_ajax_id = fc_match.group(1).encode().decode("unicode_escape")
+            now_dt = datetime.now()
+            start_str = (now_dt - timedelta(days=7)).strftime("%Y%m%d000000")
+            end_str = (now_dt + timedelta(days=30)).strftime("%Y%m%d235959")
+
+            fc_obj = {
+                "salt": salt,
+                "pageItems": {
+                    "itemsToSubmit": [{"n": "P1_ELEVE_ID", "v": eleve_id, "ck": eleve_ck}]
+                    if eleve_ck
+                    else [],
+                    "protected": protected,
+                    "rowVersion": "",
+                    "formRegionChecksums": [],
+                },
+            }
+
+            fc_payload = {
+                "p_flow_id": "104",
+                "p_flow_step_id": "1",
+                "p_instance": session_id,
+                "p_request": f"PLUGIN={fc_ajax_id}",
+                "x01": "GET",
+                "x02": start_str,
+                "x03": end_str,
+                "p_json": json.dumps(fc_obj),
+            }
+
+            try:
+                async with session.post(ajax_url, data=fc_payload, headers=ajax_headers) as fc_resp:
+                    if fc_resp.status == 200:
+                        fc_data = await fc_resp.json(content_type=None)
+                        if isinstance(fc_data, list):
+                            timetable = parse_calendar_events(fc_data)
+            except (aiohttp.ClientError, TimeoutError, ValueError, json.JSONDecodeError) as err:
+                _LOGGER.warning("Failed to fetch timetable calendar events: %s", err)
+
         return SimeStudentData(
             student=student,
             recent_grades=recent_grades,
@@ -282,4 +330,5 @@ class SimeClient:
             general_average=general_avg,
             absence_summary=absence_summary,
             homework=homework,
+            timetable=timetable,
         )

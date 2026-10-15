@@ -4,18 +4,23 @@ from __future__ import annotations
 
 import logging
 import re
+import zoneinfo
+from datetime import datetime
 
 from bs4 import BeautifulSoup
 
 from .models import (
     SimeAbsenceSummary,
     SimeHomework,
+    SimeLesson,
     SimeRecentGrade,
     SimeStudent,
     SimeSubjectGrades,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+CHISINAU_TZ = zoneinfo.ZoneInfo("Europe/Chisinau")
 
 
 def get_input_value(soup: BeautifulSoup, element_id: str, default: str = "") -> str:
@@ -190,3 +195,66 @@ def parse_absences_summary(soup: BeautifulSoup) -> SimeAbsenceSummary:
         sem2_motivated=get_int(get_input_value(soup, "P1_MOTIVATED2", "0")),
         sem2_unmotivated=get_int(get_input_value(soup, "P1_UNMOTIVATED2", "0")),
     )
+
+
+def parse_calendar_events(events_json: list[dict]) -> list[SimeLesson]:
+    """Parse FullCalendar JSON events into strongly-typed SimeLesson objects."""
+    lessons: list[SimeLesson] = []
+    if not events_json:
+        return lessons
+
+    for ev in events_json:
+        start_raw = ev.get("start")
+        end_raw = ev.get("end")
+        if not start_raw or not end_raw:
+            continue
+
+        try:
+            start_time = datetime.fromisoformat(start_raw)
+            if start_time.tzinfo is None:
+                start_time = start_time.replace(tzinfo=CHISINAU_TZ)
+            end_time = datetime.fromisoformat(end_raw)
+            if end_time.tzinfo is None:
+                end_time = end_time.replace(tzinfo=CHISINAU_TZ)
+        except (ValueError, TypeError):
+            continue
+
+        url = ev.get("url", "")
+        m_id = re.search(r"p19_orar_id=([0-9A-Za-z]+)", url)
+        m_date = re.search(r"p19_lesson_date=([0-9\.]+)", url)
+        if m_id and m_date:
+            lesson_id = f"{m_id.group(1)}_{m_date.group(1)}"
+        elif m_id:
+            lesson_id = m_id.group(1)
+        else:
+            lesson_id = f"{start_raw}_{len(lessons)}"
+
+        title_html = ev.get("title", "")
+        soup = BeautifulSoup(title_html, "html.parser")
+
+        subj_elem = soup.find(class_="lesson-text-wrap")
+        subject = subj_elem.get_text(strip=True) if subj_elem else "Lecție"
+
+        room_elem = soup.find(class_="lesson-room")
+        classroom = room_elem.get_text(strip=True) if room_elem else None
+
+        teacher_elem = soup.find(class_="lesson-teacher")
+        teacher = teacher_elem.get_text(strip=True) if teacher_elem else None
+
+        hw_elem = soup.find(class_="lesson-homework") or soup.find(class_="lesson-line3")
+        topic = hw_elem.get_text(" ", strip=True) if hw_elem else None
+
+        lessons.append(
+            SimeLesson(
+                id=lesson_id,
+                subject=subject,
+                start_time=start_time,
+                end_time=end_time,
+                classroom=classroom,
+                teacher=teacher,
+                topic=topic,
+            )
+        )
+
+    lessons.sort(key=lambda x: x.start_time)
+    return lessons
