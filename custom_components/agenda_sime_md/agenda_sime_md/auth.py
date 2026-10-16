@@ -38,6 +38,12 @@ class SimeAuthManager:
         """Return True if session has completed authentication."""
         return self._authenticated and self.session_id is not None
 
+    def invalidate(self) -> None:
+        """Invalidate authentication state and session tokens."""
+        self._authenticated = False
+        self.session_id = None
+        self.portal_url = None
+
     async def login(
         self,
         session: aiohttp.ClientSession,

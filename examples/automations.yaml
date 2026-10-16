@@ -2,7 +2,7 @@
 # AGENDA SIME MD — AUTOMATION RECIPES
 # ==============================================================================
 # Replace 'elev' with your student's entity slug
-# (e.g. binary_sensor.roman_prescornic_absence_today).
+# (e.g. binary_sensor.elev_exemplar_absence_today).
 # Replace 'notify.notify' with your mobile app service
 # (e.g. notify.mobile_app_iphone_parinte).
 # ==============================================================================
@@ -42,7 +42,7 @@
   description: "Trimite un mesaj cu nota primită, materia și tema evaluării."
   trigger:
     - platform: state
-      entity_id: sensor.elev_last_grade
+      entity_id: sensor.elev_latest_grade
   condition:
     - condition: template
       value_template: "{{ trigger.to_state.state not in ['unknown', 'unavailable', ''] }}"

@@ -2,7 +2,7 @@
 # AGENDA SIME MD — LOVELACE DASHBOARD EXAMPLES
 # ==============================================================================
 # In all examples below, replace 'elev' with your student's entity slug
-# (e.g. sensor.roman_prescornic_today_lessons or similar).
+# (e.g. sensor.elev_exemplar_today_lessons or similar).
 # ==============================================================================
 
 # ------------------------------------------------------------------------------

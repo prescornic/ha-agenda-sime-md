@@ -14,6 +14,10 @@
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
 </p>
 
+<p align="center">
+  <img src="images/dashboard.png" alt="Agenda SIME MD Dashboard" width="100%">
+</p>
+
 ---
 
 ## 🌟 Funcționalități Principale (Key Features)
@@ -21,7 +25,7 @@
 Această integrare aduce catalogul școlar SIME direct în tabloul de bord Home Assistant pentru părinți și elevi:
 
 - 📊 **Note & Medii în Timp Real (Grades & Averages):**
-  - **Ultima notă** (`sensor.<elev>_last_grade`), extrasă din *Performanță -> Note recente* (`P1_LAST_3_EVAL_LIST`) pentru detectarea promptă a calificativelor noi, cu atribute bogate (disciplină, dată, profesor, temă).
+  - **Ultima notă** (`sensor.<elev>_latest_grade`), extrasă din *Performanță -> Note recente* (`P1_LAST_3_EVAL_LIST`) pentru detectarea promptă a calificativelor noi, cu atribute bogate (disciplină, dată, profesor, temă).
   - **Media generală** (`sensor.<elev>_general_average`) calculată automat din mediile semestriale.
   - **Medii pe discipline** (`sensor.<elev>_<disciplina>_average`) create dinamic pentru fiecare materie din catalog.
 - 🚨 **Absențe & Alerte Instantanee (Attendance & Live Alerts):**
@@ -149,8 +153,12 @@ cards:
         icon: mdi:account-cancel
         color: red
   - type: entities
-    title: "📋 Detalii Școlare"
+    title: "📋 Detalii Situație Școlară"
     entities:
+      - entity: sensor.elev_latest_grade
+        name: "Ultima notă"
+      - entity: sensor.elev_latest_grade_date
+        name: "Data ultimei note"
       - entity: binary_sensor.elev_new_grade_today
         name: "Notă primită astăzi"
       - entity: binary_sensor.elev_absence_today
@@ -194,7 +202,7 @@ action:
 alias: "SIME MD: Notificare notă nouă"
 trigger:
   - platform: state
-    entity_id: sensor.elev_last_grade
+    entity_id: sensor.elev_latest_grade
 condition:
   - condition: template
     value_template: "{{ trigger.to_state.state not in ['unknown', 'unavailable', ''] }}"

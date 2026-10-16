@@ -202,7 +202,8 @@ class SimeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     ) -> FlowResult:
         """Handle re-entering password for re-authentication."""
         errors: dict[str, str] = {}
-        assert self._reauth_entry is not None
+        if self._reauth_entry is None:
+            return self.async_abort(reason="unknown")
 
         if user_input is not None:
             password = user_input[CONF_PASSWORD]

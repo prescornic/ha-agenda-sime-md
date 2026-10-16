@@ -84,9 +84,17 @@ class SimeClient:
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.close()
 
+    def invalidate_session(self) -> None:
+        """Invalidate the session and clear cached URLs and cookies."""
+        self.auth.invalidate()
+        self._student_urls.clear()
+        if self._session and not self._session.closed:
+            self._session.cookie_jar.clear()
+
     async def login(self) -> bool:
         """Authenticate user against agenda.sime.md."""
         session = await self._get_session()
+        self._student_urls.clear()
         await self.auth.login(session, self.username, self.password)
         return True
 
@@ -99,17 +107,47 @@ class SimeClient:
 
     async def get_students(self) -> list[SimeStudent]:
         """Fetch all enrolled students accessible to the logged-in account."""
-        session = await self._ensure_logged_in()
+        soup: BeautifulSoup | None = None
+        for attempt in range(2):
+            session = await self._ensure_logged_in()
 
-        try:
-            async with session.get(self.auth.portal_url) as resp:
-                if resp.status != 200:
-                    raise SimeConnectionError(f"HTTP {resp.status} accessing portal")
-                html = await resp.text()
-        except aiohttp.ClientError as err:
-            raise SimeConnectionError(f"Failed to access portal page: {err}") from err
+            try:
+                async with session.get(self.auth.portal_url) as resp:
+                    if resp.status in (401, 403, 404, 440) and attempt == 0:
+                        _LOGGER.warning(
+                            "SIME MD session expired (HTTP %s) accessing portal, re-authenticating...",
+                            resp.status,
+                        )
+                        self.invalidate_session()
+                        continue
+                    if resp.status != 200:
+                        raise SimeConnectionError(f"HTTP {resp.status} accessing portal")
+                    html = await resp.text()
+            except aiohttp.ClientError as err:
+                if attempt == 0:
+                    _LOGGER.warning("Network error accessing portal, re-authenticating: %s", err)
+                    self.invalidate_session()
+                    continue
+                raise SimeConnectionError(f"Failed to access portal page: {err}") from err
 
-        soup = BeautifulSoup(html, "html.parser")
+            soup = BeautifulSoup(html, "html.parser")
+            p1_id = get_input_value(soup, "P1_ELEVE_ID")
+            tree_nav = soup.find(id="t_TreeNav")
+            current_url = str(resp.url).lower()
+
+            if (not p1_id and not tree_nav or "/public" in current_url or "login" in current_url) and attempt == 0:
+                _LOGGER.warning(
+                    "SIME MD session expired or redirected to %s, re-authenticating...",
+                    resp.url,
+                )
+                self.invalidate_session()
+                continue
+
+            break
+
+        if soup is None:
+            raise SimeConnectionError("Failed to access portal page after re-authentication")
+
         primary_student = parse_student_profile(soup)
 
         # Check for children in side navigation tree (#t_TreeNav)
@@ -149,22 +187,55 @@ class SimeClient:
 
     async def get_student_data(self, student_id: str | None = None) -> SimeStudentData:
         """Fetch complete school data (grades, absences, homework) for a student."""
-        session = await self._ensure_logged_in()
+        soup: BeautifulSoup | None = None
+        html: str = ""
+        session: aiohttp.ClientSession | None = None
+        target_url: str | None = None
 
-        # Determine target navigation URL
-        target_url = self._student_urls.get(student_id) if student_id else None
-        if not target_url:
-            target_url = self.auth.portal_url
+        for attempt in range(2):
+            session = await self._ensure_logged_in()
 
-        try:
-            async with session.get(target_url) as resp:
-                if resp.status != 200:
-                    raise SimeConnectionError(f"Failed to fetch student data: HTTP {resp.status}")
-                html = await resp.text()
-        except aiohttp.ClientError as err:
-            raise SimeConnectionError(f"Network error loading student dashboard: {err}") from err
+            # Determine target navigation URL
+            target_url = self._student_urls.get(student_id) if student_id else None
+            if not target_url:
+                target_url = self.auth.portal_url
 
-        soup = BeautifulSoup(html, "html.parser")
+            try:
+                async with session.get(target_url) as resp:
+                    if resp.status in (401, 403, 404, 440) and attempt == 0:
+                        _LOGGER.warning(
+                            "SIME MD session expired (HTTP %s) loading student dashboard, re-authenticating...",
+                            resp.status,
+                        )
+                        self.invalidate_session()
+                        continue
+                    if resp.status != 200:
+                        raise SimeConnectionError(f"Failed to fetch student data: HTTP {resp.status}")
+                    html = await resp.text()
+            except aiohttp.ClientError as err:
+                if attempt == 0:
+                    _LOGGER.warning("Network error loading student dashboard, re-authenticating: %s", err)
+                    self.invalidate_session()
+                    continue
+                raise SimeConnectionError(f"Network error loading student dashboard: {err}") from err
+
+            soup = BeautifulSoup(html, "html.parser")
+            p1_id = get_input_value(soup, "P1_ELEVE_ID")
+            tree_nav = soup.find(id="t_TreeNav")
+            current_url = str(resp.url).lower()
+
+            if (not p1_id and not tree_nav or "/public" in current_url or "login" in current_url) and attempt == 0:
+                _LOGGER.warning(
+                    "SIME MD session expired or redirected to %s (P1_ELEVE_ID missing), re-authenticating...",
+                    resp.url,
+                )
+                self.invalidate_session()
+                continue
+
+            break
+
+        if soup is None or session is None or target_url is None:
+            raise SimeConnectionError("Failed to load student dashboard after re-authentication")
 
         # Discover or refresh student URLs from TreeNav
         tree_nav = soup.find(id="t_TreeNav")

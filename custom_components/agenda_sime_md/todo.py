@@ -74,7 +74,7 @@ class SimeHomeworkTodoList(SimeEntity, TodoListEntity):
         items: list[TodoItem] = []
         for hw in self.student_data.homework:
             raw_id = f"{hw.subject}_{hw.due_date_str}_{hw.description}"
-            uid = hashlib.sha1(raw_id.encode("utf-8")).hexdigest()[:16]
+            uid = hashlib.sha256(raw_id.encode("utf-8")).hexdigest()[:16]
             due = _parse_due_date(hw.due_date_str)
 
             clean_desc = hw.description.strip()
