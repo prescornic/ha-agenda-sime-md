@@ -256,15 +256,14 @@ class SimeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: ConfigEntry,
     ) -> SimeOptionsFlowHandler:
         """Get options flow handler."""
-        return SimeOptionsFlowHandler(config_entry)
+        return SimeOptionsFlowHandler()
 
 
 class SimeOptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options flow for Agenda SIME MD."""
 
-    def __init__(self, config_entry: ConfigEntry) -> None:
+    def __init__(self, config_entry: ConfigEntry | None = None) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
