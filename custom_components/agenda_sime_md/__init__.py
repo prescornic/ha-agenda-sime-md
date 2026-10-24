@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
@@ -34,11 +33,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     role_str = entry.data.get(CONF_ROLE, DEFAULT_ROLE)
     student_ids = entry.data.get(CONF_STUDENTS, [])
 
-    role_enum = (
-        SimeAccountRole.PARENT
-        if role_str == ROLE_PARENT
-        else SimeAccountRole.STUDENT
-    )
+    role_enum = SimeAccountRole.PARENT if role_str == ROLE_PARENT else SimeAccountRole.STUDENT
 
     session = async_create_clientsession(hass)
     client = SimeClient(
@@ -60,15 +55,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # Forward entry setups to platforms that exist
-    component_dir = Path(__file__).parent
-    active_platforms = [
-        platform for platform in PLATFORMS
-        if (component_dir / f"{platform}.py").exists()
-    ]
-
-    if active_platforms:
-        await hass.config_entries.async_forward_entry_setups(entry, active_platforms)
+    # Forward entry setups to platforms
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # Register reload listener when options change
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
@@ -78,22 +66,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload an Agenda SIME MD config entry."""
-    component_dir = Path(__file__).parent
-    active_platforms = [
-        platform for platform in PLATFORMS
-        if (component_dir / f"{platform}.py").exists()
-    ]
-
-    unload_ok = True
-    if active_platforms:
-        unload_ok = await hass.config_entries.async_unload_platforms(entry, active_platforms)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok and DOMAIN in hass.data:
-        coordinator: SimeDataUpdateCoordinator | None = hass.data[DOMAIN].pop(
-            entry.entry_id, None
-        )
+        coordinator: SimeDataUpdateCoordinator | None = hass.data[DOMAIN].pop(entry.entry_id, None)
         if coordinator and coordinator.client:
             await coordinator.client.close()
+            if coordinator.client._session and not coordinator.client._session.closed:
+                await coordinator.client._session.close()
 
     return unload_ok
 

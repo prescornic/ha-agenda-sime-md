@@ -44,13 +44,9 @@ class SimeEntity(CoordinatorEntity[SimeDataUpdateCoordinator]):
     @property
     def device_info(self) -> DeviceInfo:
         """Return device information grouping entities per student."""
-        student_name = (
-            self.student.name if self.student else f"Elev {self._student_id}"
-        )
+        student_name = self.student.name if self.student else f"Elev {self._student_id}"
         classroom = (
-            f"Clasa {self.student.classroom}"
-            if self.student and self.student.classroom
-            else "Elev"
+            f"Clasa {self.student.classroom}" if self.student and self.student.classroom else "Elev"
         )
         school_name = (
             self.student.school_name if self.student and self.student.school_name else None

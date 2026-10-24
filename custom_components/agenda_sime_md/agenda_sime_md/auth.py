@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 import logging
@@ -9,7 +10,6 @@ import re
 import urllib.parse
 
 import aiohttp
-from bs4 import BeautifulSoup
 
 from .exceptions import (
     SimeAuthError,
@@ -17,6 +17,7 @@ from .exceptions import (
     SimeRateLimitError,
 )
 from .models import SimeAccountRole
+from .parser import parse_login_dialog_url, parse_login_form_tokens
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,33 +57,23 @@ class SimeAuthManager:
             The authenticated portal URL.
         """
         user_type = self.role.value
-        user_type_name = "Autentificare părinte" if self.role == SimeAccountRole.PARENT else "Autentificare elev"
+        user_type_name = (
+            "Autentificare părinte" if self.role == SimeAccountRole.PARENT else "Autentificare elev"
+        )
 
         # Step 1: Fetch public portal
         try:
             async with session.get(PUBLIC_PORTAL_URL) as resp:
                 if resp.status != 200:
-                    raise SimeConnectionError(f"Failed to access {PUBLIC_PORTAL_URL}: HTTP {resp.status}")
+                    raise SimeConnectionError(
+                        f"Failed to access {PUBLIC_PORTAL_URL}: HTTP {resp.status}"
+                    )
                 public_html = await resp.text()
         except aiohttp.ClientError as err:
             raise SimeConnectionError(f"Network error accessing agenda.sime.md: {err}") from err
 
-        soup = BeautifulSoup(public_html, "html.parser")
-
         # Step 2: Extract modal dialog URL with matching user_type
-        dialog_url = None
-        pattern = f"p101_user_type={user_type}"
-        for a in soup.find_all("a", href=True):
-            if "login_desktop" in a["href"] and pattern in a["href"]:
-                href = a["href"]
-                start = href.find("'")
-                end = href.find("'", start + 1)
-                if start != -1 and end != -1:
-                    raw_target = href[start + 1 : end]
-                    target = raw_target.encode("utf-8").decode("unicode_escape")
-                    dialog_url = urllib.parse.urljoin(BASE_URL, target)
-                    break
-
+        dialog_url = await asyncio.to_thread(parse_login_dialog_url, public_html, user_type)
         if not dialog_url:
             raise SimeAuthError(f"Could not locate login dialog URL for user_type={user_type}")
 
@@ -95,55 +86,42 @@ class SimeAuthManager:
         except aiohttp.ClientError as err:
             raise SimeConnectionError(f"Network error loading login dialog: {err}") from err
 
-        dsoup = BeautifulSoup(dialog_html, "html.parser")
-        form = dsoup.find("form")
-        if not form:
-            raise SimeAuthError("Login dialog did not return a valid HTML form")
-
-        action = form.get("action")
-        p_flow_id = dsoup.find("input", id="pFlowId")
-        p_flow_step_id = dsoup.find("input", id="pFlowStepId")
-        p_instance = dsoup.find("input", id="pInstance")
-        p_page_submission_id = dsoup.find("input", id="pPageSubmissionId")
-        p_reload_on_submit = dsoup.find("input", id="pReloadOnSubmit")
-        p_salt = dsoup.find("input", id="pSalt")
-        p_protected = dsoup.find("input", id="pPageItemsProtected")
-
-        if not all([action, p_flow_id, p_flow_step_id, p_instance, p_page_submission_id, p_salt, p_protected]):
-            raise SimeAuthError("Missing required APEX tokens in login form")
-
-        # Map protected item checksums
-        checksums = {inp["data-for"]: inp.get("value", "") for inp in dsoup.find_all("input", attrs={"data-for": True})}
+        tokens = await asyncio.to_thread(parse_login_form_tokens, dialog_html)
 
         # Step 4: Construct APEX 23.2 p_json payload
+        checksums = tokens["checksums"]
         items_to_submit = [
             {"n": "P101_USER_TYPE", "v": user_type, "ck": checksums.get("P101_USER_TYPE")},
-            {"n": "P101_USER_TYPE_NAME", "v": user_type_name, "ck": checksums.get("P101_USER_TYPE_NAME")},
+            {
+                "n": "P101_USER_TYPE_NAME",
+                "v": user_type_name,
+                "ck": checksums.get("P101_USER_TYPE_NAME"),
+            },
             {"n": "P101_USERNAME", "v": username},
             {"n": "P101_PASSWORD", "v": password},
         ]
 
         r_obj = {
-            "salt": p_salt["value"],
+            "salt": tokens["salt"],
             "pageItems": {
                 "itemsToSubmit": items_to_submit,
-                "protected": p_protected["value"],
+                "protected": tokens["protected"],
                 "rowVersion": "",
                 "formRegionChecksums": [],
             },
         }
 
         post_payload = {
-            "p_flow_id": p_flow_id["value"],
-            "p_flow_step_id": p_flow_step_id["value"],
-            "p_instance": p_instance["value"],
-            "p_page_submission_id": p_page_submission_id["value"],
+            "p_flow_id": tokens["p_flow_id"],
+            "p_flow_step_id": tokens["p_flow_step_id"],
+            "p_instance": tokens["p_instance"],
+            "p_page_submission_id": tokens["p_page_submission_id"],
             "p_request": "LOGIN",
-            "p_reload_on_submit": p_reload_on_submit["value"] if p_reload_on_submit else "S",
+            "p_reload_on_submit": tokens["p_reload_on_submit"],
             "p_json": json.dumps(r_obj),
         }
 
-        post_url = f"{BASE_URL}/ords/{action}"
+        post_url = f"{BASE_URL}/ords/{tokens['action']}"
         post_headers = {
             "Referer": dialog_url,
             "Origin": BASE_URL,
@@ -196,5 +174,5 @@ class SimeAuthManager:
             self.session_id = sess_match.group(1)
         self._authenticated = True
 
-        _LOGGER.debug("Successfully authenticated to SIME with session ID %s", self.session_id)
+        _LOGGER.debug("Successfully authenticated to SIME")
         return self.portal_url

@@ -145,7 +145,9 @@ async def test_coordinator_auth_error_triggers_reauth(hass: HomeAssistant):
 async def test_coordinator_rate_limit_error(hass: HomeAssistant):
     """Test that SimeRateLimitError raises UpdateFailed."""
     client = MagicMock()
-    client.get_student_data = AsyncMock(side_effect=SimeRateLimitError("Rate limit", wait_seconds=30))
+    client.get_student_data = AsyncMock(
+        side_effect=SimeRateLimitError("Rate limit", wait_seconds=30)
+    )
 
     entry = create_mock_entry()
     coordinator = SimeDataUpdateCoordinator(

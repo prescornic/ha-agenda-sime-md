@@ -67,7 +67,9 @@ def create_sample_student_data() -> SimeStudentData:
 
     # Next school day (2 days ahead)
     next_day = today + timedelta(days=2)
-    next_start = datetime.combine(next_day, datetime.min.time(), tzinfo=dt_util.DEFAULT_TIME_ZONE) + timedelta(hours=9)
+    next_start = datetime.combine(
+        next_day, datetime.min.time(), tzinfo=dt_util.DEFAULT_TIME_ZONE
+    ) + timedelta(hours=9)
     next_end = next_start + timedelta(minutes=45)
 
     timetable = [

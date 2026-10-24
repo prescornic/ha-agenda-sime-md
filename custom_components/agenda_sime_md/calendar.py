@@ -25,8 +25,7 @@ async def async_setup_entry(
     coordinator: SimeDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities = [
-        SimeTimetableCalendar(coordinator, student_id)
-        for student_id in coordinator.student_ids
+        SimeTimetableCalendar(coordinator, student_id) for student_id in coordinator.student_ids
     ]
 
     async_add_entities(entities)
@@ -58,9 +57,7 @@ class SimeTimetableCalendar(SimeEntity, CalendarEntity):
     _attr_translation_key = "timetable"
     _attr_icon = "mdi:calendar-month"
 
-    def __init__(
-        self, coordinator: SimeDataUpdateCoordinator, student_id: str
-    ) -> None:
+    def __init__(self, coordinator: SimeDataUpdateCoordinator, student_id: str) -> None:
         """Initialize timetable calendar."""
         super().__init__(coordinator, student_id)
         self._attr_unique_id = f"{student_id}_timetable"
@@ -72,9 +69,7 @@ class SimeTimetableCalendar(SimeEntity, CalendarEntity):
             return None
 
         now = dt_util.now()
-        upcoming_lessons = [
-            l for l in self.student_data.timetable if l.end_time >= now
-        ]
+        upcoming_lessons = [l for l in self.student_data.timetable if l.end_time >= now]
         if not upcoming_lessons:
             return None
 

@@ -6,8 +6,12 @@ from lib.agenda_sime_md.parser import (
     parse_absences_summary,
     parse_calendar_events,
     parse_homework,
+    parse_login_dialog_url,
+    parse_login_form_tokens,
+    parse_portal_info,
     parse_recent_grades,
     parse_semester_grades_table,
+    parse_student_dashboard,
     parse_student_profile,
 )
 
@@ -185,3 +189,92 @@ def test_parse_calendar_events():
     assert lesson.end_time.hour == 9
     assert lesson.end_time.minute == 45
     assert lesson.start_time.tzinfo is not None
+
+
+def test_parse_login_dialog_url():
+    html = """
+    <div>
+        <a href="javascript:apex.theme42.dialog('login_desktop?p101_user_type=P&session=123',{})">Parent Login</a>
+        <a href="javascript:apex.theme42.dialog('login_desktop?p101_user_type=E&session=123',{})">Student Login</a>
+    </div>
+    """
+    url_p = parse_login_dialog_url(html, "P")
+    assert url_p == "https://agenda.sime.md/login_desktop?p101_user_type=P&session=123"
+
+    url_e = parse_login_dialog_url(html, "E")
+    assert url_e == "https://agenda.sime.md/login_desktop?p101_user_type=E&session=123"
+
+    assert parse_login_dialog_url(html, "UNKNOWN") is None
+    assert parse_login_dialog_url("", "P") is None
+
+
+def test_parse_login_form_tokens():
+    html = """
+    <form action="wwv_flow.accept">
+        <input id="pFlowId" value="100"/>
+        <input id="pFlowStepId" value="101"/>
+        <input id="pInstance" value="12345"/>
+        <input id="pPageSubmissionId" value="67890"/>
+        <input id="pReloadOnSubmit" value="S"/>
+        <input id="pSalt" value="99999"/>
+        <input id="pPageItemsProtected" value="ENCRYPTED_PROTECTED"/>
+        <input data-for="P101_USERNAME" value="CK_USER"/>
+    </form>
+    """
+    tokens = parse_login_form_tokens(html)
+    assert tokens["action"] == "wwv_flow.accept"
+    assert tokens["p_flow_id"] == "100"
+    assert tokens["p_flow_step_id"] == "101"
+    assert tokens["p_instance"] == "12345"
+    assert tokens["salt"] == "99999"
+    assert tokens["protected"] == "ENCRYPTED_PROTECTED"
+    assert tokens["checksums"]["P101_USERNAME"] == "CK_USER"
+
+
+def test_parse_portal_info():
+    html = f"""
+    <html>
+    <body>
+        {SAMPLE_PROFILE_HTML}
+        <ul id="t_TreeNav">
+            <li data-current="true"><a href="f?p=100:1:0::::user_eleve_id=ST1">Elev 1</a></li>
+            <li><a href="f?p=100:1:0::::user_eleve_id=ST2">Elev 2</a></li>
+        </ul>
+    </body>
+    </html>
+    """
+    portal_info = parse_portal_info(html)
+    assert portal_info.p1_id == "STUDENT_ID_00000000000000000000"
+    assert portal_info.has_tree_nav is True
+    assert len(portal_info.student_links) == 2
+    assert portal_info.student_links[0][0] == "ST1"
+    assert portal_info.student_links[0][3] is True  # is_current
+    assert portal_info.student_links[1][0] == "ST2"
+    assert portal_info.student_links[1][3] is False
+
+
+def test_parse_student_dashboard():
+    html = f"""
+    <html>
+    <body>
+        {SAMPLE_PROFILE_HTML}
+        <input id="P1_LAST_3_EVAL_LIST" value='{SAMPLE_RECENT_EVAL}'/>
+        <input id="P1_HOMEWORK" value='{SAMPLE_HOMEWORK}'/>
+        {SAMPLE_ABSENCES_HTML}
+        <input data-for="P1_ELEVE_ID" value="CK_ELEVE_VAL"/>
+        <input id="pSalt" value="SALT123"/>
+        <input id="pPageItemsProtected" value="PROT123"/>
+        <script>
+            apex.widget.report.init("sem1","AJAX_SEM1",{{"pageItems":"#P1_ELEVE_ID","lazyLoading":true,"internalRegionId":"REG_SEM1"}});
+        </script>
+    </body>
+    </html>
+    """
+    dash = parse_student_dashboard(html)
+    assert dash.student.id == "STUDENT_ID_00000000000000000000"
+    assert dash.eleve_ck == "CK_ELEVE_VAL"
+    assert dash.salt == "SALT123"
+    assert dash.protected == "PROT123"
+    assert "sem1" in dash.sem_ajax_configs
+    assert dash.sem_ajax_configs["sem1"] == ("AJAX_SEM1", "REG_SEM1")
+    assert dash.absence_summary.total == 3

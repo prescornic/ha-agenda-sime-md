@@ -5,8 +5,10 @@ from custom_components.agenda_sime_md.agenda_sime_md.models import (
     SimeAccountRole,
     SimeHomework,
     SimeLesson,
+    SimePortalInfo,
     SimeRecentGrade,
     SimeStudent,
+    SimeStudentDashboardData,
     SimeStudentData,
     SimeSubjectGrades,
 )
@@ -16,8 +18,10 @@ __all__ = [
     "SimeAccountRole",
     "SimeHomework",
     "SimeLesson",
+    "SimePortalInfo",
     "SimeRecentGrade",
     "SimeStudent",
+    "SimeStudentDashboardData",
     "SimeStudentData",
     "SimeSubjectGrades",
 ]

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
+from datetime import date, timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -48,6 +48,8 @@ class SimeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, SimeStudentData]
         self.client = client
         self.entry = entry
         self.student_ids = student_ids
+        self._absence_baseline: dict[str, tuple[date, int]] = {}
+        self._absences_today: dict[str, int] = {}
 
         initial_interval = self._calculate_update_interval()
         super().__init__(
@@ -77,16 +79,48 @@ class SimeDataUpdateCoordinator(DataUpdateCoordinator[dict[str, SimeStudentData]
         )
         return timedelta(minutes=interval_minutes)
 
+    def get_absences_today(self, student_id: str) -> int:
+        """Return count of absences recorded today for the student."""
+        return self._absences_today.get(student_id, 0)
+
+    def get_absence_baseline(self, student_id: str) -> int | None:
+        """Return baseline absence count for the student today."""
+        if student_id in self._absence_baseline:
+            return self._absence_baseline[student_id][1]
+        return None
+
+    def set_absence_baseline(
+        self, student_id: str, baseline_date: date, baseline_count: int
+    ) -> None:
+        """Set baseline absence count (used when restoring state across restarts)."""
+        self._absence_baseline[student_id] = (baseline_date, baseline_count)
+        if self.data and student_id in self.data:
+            current_total = self.data[student_id].absence_summary.total
+            self._absences_today[student_id] = max(0, current_total - baseline_count)
+
     async def _async_update_data(self) -> dict[str, SimeStudentData]:
         """Fetch data from agenda.sime.md for all configured students."""
         # Dynamically adapt next update interval based on current time
         self.update_interval = self._calculate_update_interval()
 
         data: dict[str, SimeStudentData] = {}
+        today = dt_util.now().date()
         try:
             for student_id in self.student_ids:
                 student_data = await self.client.get_student_data(student_id)
                 data[student_id] = student_data
+
+                current_total = student_data.absence_summary.total
+                if student_id not in self._absence_baseline:
+                    self._absence_baseline[student_id] = (today, current_total)
+                    self._absences_today[student_id] = 0
+                else:
+                    base_date, base_count = self._absence_baseline[student_id]
+                    if base_date != today:
+                        self._absence_baseline[student_id] = (today, current_total)
+                        self._absences_today[student_id] = 0
+                    else:
+                        self._absences_today[student_id] = max(0, current_total - base_count)
         except SimeRateLimitError as err:
             _LOGGER.warning("Rate limit encountered on agenda.sime.md: %s", err)
             raise UpdateFailed(f"Rate limited by SIME MD: {err}") from err

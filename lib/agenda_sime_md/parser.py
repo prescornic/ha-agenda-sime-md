@@ -4,22 +4,28 @@ from __future__ import annotations
 
 import logging
 import re
+import urllib.parse
 import zoneinfo
 from datetime import datetime
+from typing import Any
 
 from bs4 import BeautifulSoup
 
+from .exceptions import SimeAuthError
 from .models import (
     SimeAbsenceSummary,
     SimeHomework,
     SimeLesson,
+    SimePortalInfo,
     SimeRecentGrade,
     SimeStudent,
+    SimeStudentDashboardData,
     SimeSubjectGrades,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
+BASE_URL = "https://agenda.sime.md"
 CHISINAU_TZ = zoneinfo.ZoneInfo("Europe/Chisinau")
 
 
@@ -258,3 +264,168 @@ def parse_calendar_events(events_json: list[dict]) -> list[SimeLesson]:
 
     lessons.sort(key=lambda x: x.start_time)
     return lessons
+
+
+def parse_login_dialog_url(public_html: str, user_type: str) -> str | None:
+    """Extract modal dialog URL for given user type from public portal HTML."""
+    if not public_html:
+        return None
+    soup = BeautifulSoup(public_html, "html.parser")
+    pattern = f"p101_user_type={user_type}"
+    for a in soup.find_all("a", href=True):
+        if "login_desktop" in a["href"] and pattern in a["href"]:
+            href = a["href"]
+            start = href.find("'")
+            end = href.find("'", start + 1)
+            if start != -1 and end != -1:
+                raw_target = href[start + 1 : end]
+                target = raw_target.encode("utf-8").decode("unicode_escape")
+                return urllib.parse.urljoin(BASE_URL, target)
+    return None
+
+
+def parse_login_form_tokens(dialog_html: str) -> dict[str, Any]:
+    """Extract required APEX tokens, form action, and checksums from login dialog HTML."""
+    if not dialog_html:
+        raise SimeAuthError("Login dialog returned empty response")
+    dsoup = BeautifulSoup(dialog_html, "html.parser")
+    form = dsoup.find("form")
+    if not form:
+        raise SimeAuthError("Login dialog did not return a valid HTML form")
+
+    action = form.get("action")
+    p_flow_id = dsoup.find("input", id="pFlowId")
+    p_flow_step_id = dsoup.find("input", id="pFlowStepId")
+    p_instance = dsoup.find("input", id="pInstance")
+    p_page_submission_id = dsoup.find("input", id="pPageSubmissionId")
+    p_reload_on_submit = dsoup.find("input", id="pReloadOnSubmit")
+    p_salt = dsoup.find("input", id="pSalt")
+    p_protected = dsoup.find("input", id="pPageItemsProtected")
+
+    if not all(
+        [action, p_flow_id, p_flow_step_id, p_instance, p_page_submission_id, p_salt, p_protected]
+    ):
+        raise SimeAuthError("Missing required APEX tokens in login form")
+
+    checksums = {
+        inp["data-for"]: inp.get("value", "")
+        for inp in dsoup.find_all("input", attrs={"data-for": True})
+    }
+
+    return {
+        "action": action,
+        "p_flow_id": p_flow_id["value"],
+        "p_flow_step_id": p_flow_step_id["value"],
+        "p_instance": p_instance["value"],
+        "p_page_submission_id": p_page_submission_id["value"],
+        "p_reload_on_submit": p_reload_on_submit["value"] if p_reload_on_submit else "S",
+        "salt": p_salt["value"],
+        "protected": p_protected["value"],
+        "checksums": checksums,
+    }
+
+
+def parse_portal_info(html: str) -> SimePortalInfo:
+    """Parse student profile and tree navigation links from portal HTML."""
+    if not html:
+        return SimePortalInfo(
+            p1_id="",
+            has_tree_nav=False,
+            primary_student=SimeStudent(id="", name=""),
+            student_links=[],
+        )
+    soup = BeautifulSoup(html, "html.parser")
+    p1_id = get_input_value(soup, "P1_ELEVE_ID")
+    tree_nav = soup.find(id="t_TreeNav")
+    has_tree_nav = tree_nav is not None
+    primary_student = parse_student_profile(soup)
+
+    student_links: list[tuple[str, str, str, bool]] = []
+    if tree_nav:
+        nav_lis = tree_nav.find_all("li")
+        for li in nav_lis:
+            a = li.find("a", href=True)
+            if a and "user_eleve_id=" in a["href"]:
+                m = re.search(r"user_eleve_id=([^&]+)", a["href"])
+                uid = m.group(1) if m else primary_student.id
+                name = a.get_text(strip=True) or primary_student.name
+                href = a["href"]
+                is_current = li.get("data-current") == "true" or len(nav_lis) == 1
+                student_links.append((uid, name, href, is_current))
+
+    return SimePortalInfo(
+        p1_id=p1_id,
+        has_tree_nav=has_tree_nav,
+        primary_student=primary_student,
+        student_links=student_links,
+    )
+
+
+def parse_student_dashboard(html: str) -> SimeStudentDashboardData:
+    """Parse student dashboard HTML into profile, items, and AJAX configurations."""
+    if not html:
+        return SimeStudentDashboardData(
+            p1_id="",
+            has_tree_nav=False,
+        )
+
+    soup = BeautifulSoup(html, "html.parser")
+    p1_id = get_input_value(soup, "P1_ELEVE_ID")
+    tree_nav = soup.find(id="t_TreeNav")
+    has_tree_nav = tree_nav is not None
+
+    student_urls: list[tuple[str, str]] = []
+    if tree_nav:
+        for li in tree_nav.find_all("li"):
+            a = li.find("a", href=True)
+            if a and "user_eleve_id=" in a["href"]:
+                m = re.search(r"user_eleve_id=([^&]+)", a["href"])
+                if m:
+                    uid = m.group(1)
+                    student_urls.append((uid, a["href"]))
+
+    student = parse_student_profile(soup)
+    recent_eval_raw = get_input_value(soup, "P1_LAST_3_EVAL_LIST")
+    homework_raw = get_input_value(soup, "P1_HOMEWORK")
+    absence_summary = parse_absences_summary(soup)
+
+    eleve_ck = None
+    ck_inp = soup.find("input", attrs={"data-for": "P1_ELEVE_ID"})
+    if ck_inp:
+        eleve_ck = ck_inp.get("value")
+
+    salt = get_input_value(soup, "pSalt")
+    protected = get_input_value(soup, "pPageItemsProtected")
+
+    sem_configs = [
+        (
+            "sem1",
+            r'apex\.widget\.report\.init\("sem1","([^"]+)",\{"pageItems":"#P1_ELEVE_ID","lazyLoading":true,"internalRegionId":"([^"]+)"\}',
+        ),
+        (
+            "sem2",
+            r'apex\.widget\.report\.init\("sem2","([^"]+)",\{"pageItems":"#P1_ELEVE_ID","lazyLoading":true,"internalRegionId":"([^"]+)"\}',
+        ),
+    ]
+    sem_ajax_configs: dict[str, tuple[str, str]] = {}
+    for sem_name, pattern in sem_configs:
+        match = re.search(pattern, html)
+        if match:
+            ajax_id = match.group(1).encode().decode("unicode_escape")
+            region_id = match.group(2)
+            sem_ajax_configs[sem_name] = (ajax_id, region_id)
+
+    return SimeStudentDashboardData(
+        p1_id=p1_id,
+        has_tree_nav=has_tree_nav,
+        student_urls=student_urls,
+        student=student,
+        recent_eval_raw=recent_eval_raw,
+        homework_raw=homework_raw,
+        absence_summary=absence_summary,
+        eleve_id=p1_id,
+        eleve_ck=eleve_ck,
+        salt=salt,
+        protected=protected,
+        sem_ajax_configs=sem_ajax_configs,
+    )

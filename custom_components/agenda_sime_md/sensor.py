@@ -59,9 +59,7 @@ async def async_setup_entry(
             for subject_name in student_data.subjects:
                 key = (student_id, subject_name)
                 known_subjects.add(key)
-                entities.append(
-                    SimeSubjectAverageSensor(coordinator, student_id, subject_name)
-                )
+                entities.append(SimeSubjectAverageSensor(coordinator, student_id, subject_name))
 
     async_add_entities(entities)
 
@@ -76,9 +74,7 @@ async def async_setup_entry(
                     if key not in known_subjects:
                         known_subjects.add(key)
                         new_sensors.append(
-                            SimeSubjectAverageSensor(
-                                coordinator, student_id, subject_name
-                            )
+                            SimeSubjectAverageSensor(coordinator, student_id, subject_name)
                         )
         if new_sensors:
             async_add_entities(new_sensors)
@@ -92,9 +88,7 @@ class SimeLatestGradeSensor(SimeEntity, SensorEntity):
     _attr_translation_key = "latest_grade"
     _attr_icon = "mdi:school"
 
-    def __init__(
-        self, coordinator: SimeDataUpdateCoordinator, student_id: str
-    ) -> None:
+    def __init__(self, coordinator: SimeDataUpdateCoordinator, student_id: str) -> None:
         """Initialize latest grade sensor."""
         super().__init__(coordinator, student_id)
         self._attr_unique_id = f"{student_id}_latest_grade"
@@ -133,9 +127,7 @@ class SimeLatestGradeDateSensor(SimeEntity, SensorEntity):
     _attr_icon = "mdi:calendar-star"
     _attr_device_class = SensorDeviceClass.DATE
 
-    def __init__(
-        self, coordinator: SimeDataUpdateCoordinator, student_id: str
-    ) -> None:
+    def __init__(self, coordinator: SimeDataUpdateCoordinator, student_id: str) -> None:
         """Initialize latest grade date sensor."""
         super().__init__(coordinator, student_id)
         self._attr_unique_id = f"{student_id}_latest_grade_date"
@@ -165,9 +157,7 @@ class SimeGpaSensor(SimeEntity, SensorEntity):
     _attr_translation_key = "general_average"
     _attr_icon = "mdi:certificate"
 
-    def __init__(
-        self, coordinator: SimeDataUpdateCoordinator, student_id: str
-    ) -> None:
+    def __init__(self, coordinator: SimeDataUpdateCoordinator, student_id: str) -> None:
         """Initialize GPA sensor."""
         super().__init__(coordinator, student_id)
         self._attr_unique_id = f"{student_id}_general_average"
@@ -199,9 +189,7 @@ class SimeAbsencesSensor(SimeEntity, SensorEntity):
     _attr_translation_key = "absences"
     _attr_icon = "mdi:account-alert"
 
-    def __init__(
-        self, coordinator: SimeDataUpdateCoordinator, student_id: str
-    ) -> None:
+    def __init__(self, coordinator: SimeDataUpdateCoordinator, student_id: str) -> None:
         """Initialize absences sensor."""
         super().__init__(coordinator, student_id)
         self._attr_unique_id = f"{student_id}_absences"
@@ -305,9 +293,7 @@ class SimeTodayLessonsSensor(SimeEntity, SensorEntity):
     _attr_translation_key = "today_lessons"
     _attr_icon = "mdi:calendar-today"
 
-    def __init__(
-        self, coordinator: SimeDataUpdateCoordinator, student_id: str
-    ) -> None:
+    def __init__(self, coordinator: SimeDataUpdateCoordinator, student_id: str) -> None:
         """Initialize today lessons sensor."""
         super().__init__(coordinator, student_id)
         self._attr_unique_id = f"{student_id}_today_lessons"
@@ -319,9 +305,7 @@ class SimeTodayLessonsSensor(SimeEntity, SensorEntity):
             return []
         today = dt_util.now().date()
         return [
-            lesson
-            for lesson in self.student_data.timetable
-            if lesson.start_time.date() == today
+            lesson for lesson in self.student_data.timetable if lesson.start_time.date() == today
         ]
 
     @property
@@ -333,9 +317,7 @@ class SimeTodayLessonsSensor(SimeEntity, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         """Return lesson list with status flags, plus active homework assignments."""
         now = dt_util.now()
-        lessons_list = [
-            _format_lesson_dict(lesson, now) for lesson in self._today_lessons
-        ]
+        lessons_list = [_format_lesson_dict(lesson, now) for lesson in self._today_lessons]
         hw_list = []
         if self.student_data and self.student_data.homework:
             hw_list = [
@@ -359,9 +341,7 @@ class SimeNextDayLessonsSensor(SimeEntity, SensorEntity):
     _attr_translation_key = "next_day_lessons"
     _attr_icon = "mdi:calendar-arrow-right"
 
-    def __init__(
-        self, coordinator: SimeDataUpdateCoordinator, student_id: str
-    ) -> None:
+    def __init__(self, coordinator: SimeDataUpdateCoordinator, student_id: str) -> None:
         """Initialize next school day lessons sensor."""
         super().__init__(coordinator, student_id)
         self._attr_unique_id = f"{student_id}_next_day_lessons"
@@ -373,17 +353,13 @@ class SimeNextDayLessonsSensor(SimeEntity, SensorEntity):
             return None, []
 
         today = dt_util.now().date()
-        future_lessons = [
-            l for l in self.student_data.timetable if l.start_time.date() > today
-        ]
+        future_lessons = [l for l in self.student_data.timetable if l.start_time.date() > today]
         if not future_lessons:
             return None, []
 
         future_lessons.sort(key=lambda x: x.start_time)
         next_date = future_lessons[0].start_time.date()
-        lessons_on_date = [
-            l for l in future_lessons if l.start_time.date() == next_date
-        ]
+        lessons_on_date = [l for l in future_lessons if l.start_time.date() == next_date]
         return next_date.isoformat(), lessons_on_date
 
     @property

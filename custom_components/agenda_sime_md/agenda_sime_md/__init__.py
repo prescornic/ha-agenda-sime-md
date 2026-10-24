@@ -18,13 +18,15 @@ from .models import (
     SimeAccountRole,
     SimeHomework,
     SimeLesson,
+    SimePortalInfo,
     SimeRecentGrade,
     SimeStudent,
+    SimeStudentDashboardData,
     SimeStudentData,
     SimeSubjectGrades,
 )
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     "SimeAbsenceSummary",
@@ -37,9 +39,11 @@ __all__ = [
     "SimeHomework",
     "SimeLesson",
     "SimeParseError",
+    "SimePortalInfo",
     "SimeRateLimitError",
     "SimeRecentGrade",
     "SimeStudent",
+    "SimeStudentDashboardData",
     "SimeStudentData",
     "SimeSubjectGrades",
 ]

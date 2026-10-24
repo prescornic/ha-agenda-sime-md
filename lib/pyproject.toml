@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agenda-sime-md"
-version = "0.1.0"
+version = "0.1.1"
 description = "Asynchronous Python client library for agenda.sime.md (Moldova Electronic School Agenda)"
 readme = "README.md"
 license = "MIT"

@@ -50,7 +50,9 @@ async def test_flow_user_single_student(hass: HomeAssistant, mock_students):
 
     with (
         patch("custom_components.agenda_sime_md.async_setup_entry", return_value=True),
-        patch("custom_components.agenda_sime_md.config_flow.SimeClient.login", new_callable=AsyncMock) as mock_login,
+        patch(
+            "custom_components.agenda_sime_md.config_flow.SimeClient.login", new_callable=AsyncMock
+        ) as mock_login,
         patch(
             "custom_components.agenda_sime_md.config_flow.SimeClient.get_students",
             new_callable=AsyncMock,
@@ -82,7 +84,9 @@ async def test_flow_user_multiple_students(hass: HomeAssistant, mock_students):
     """Test flow when account has multiple enrolled students."""
     with (
         patch("custom_components.agenda_sime_md.async_setup_entry", return_value=True),
-        patch("custom_components.agenda_sime_md.config_flow.SimeClient.login", new_callable=AsyncMock),
+        patch(
+            "custom_components.agenda_sime_md.config_flow.SimeClient.login", new_callable=AsyncMock
+        ),
         patch(
             "custom_components.agenda_sime_md.config_flow.SimeClient.get_students",
             new_callable=AsyncMock,

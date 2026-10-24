@@ -30,8 +30,7 @@ async def async_setup_entry(
     coordinator: SimeDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
 
     entities = [
-        SimeHomeworkTodoList(coordinator, student_id)
-        for student_id in coordinator.student_ids
+        SimeHomeworkTodoList(coordinator, student_id) for student_id in coordinator.student_ids
     ]
 
     async_add_entities(entities)
@@ -58,9 +57,7 @@ class SimeHomeworkTodoList(SimeEntity, TodoListEntity):
     _attr_icon = "mdi:notebook-edit-outline"
     _attr_supported_features = TodoListEntityFeature(0)
 
-    def __init__(
-        self, coordinator: SimeDataUpdateCoordinator, student_id: str
-    ) -> None:
+    def __init__(self, coordinator: SimeDataUpdateCoordinator, student_id: str) -> None:
         """Initialize homework todo list."""
         super().__init__(coordinator, student_id)
         self._attr_unique_id = f"{student_id}_homework"

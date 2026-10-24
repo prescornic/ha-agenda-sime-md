@@ -9,6 +9,7 @@
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/prescornic/ha-agenda-sime-md/issues",
   "requirements": ["beautifulsoup4>=4.12.0"],
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
+
 

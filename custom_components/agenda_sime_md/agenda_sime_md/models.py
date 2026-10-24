@@ -111,3 +111,31 @@ class SimeStudentData:
     absence_summary: SimeAbsenceSummary = field(default_factory=SimeAbsenceSummary)
     homework: list[SimeHomework] = field(default_factory=list)
     timetable: list[SimeLesson] = field(default_factory=list)
+
+
+@dataclass
+class SimePortalInfo:
+    """Discovered student links and primary profile from portal page."""
+
+    p1_id: str
+    has_tree_nav: bool
+    primary_student: SimeStudent
+    student_links: list[tuple[str, str, str, bool]] = field(default_factory=list)
+
+
+@dataclass
+class SimeStudentDashboardData:
+    """Parsed items from student dashboard page."""
+
+    p1_id: str
+    has_tree_nav: bool
+    student_urls: list[tuple[str, str]] = field(default_factory=list)
+    student: SimeStudent = field(default_factory=lambda: SimeStudent(id="", name=""))
+    recent_eval_raw: str = ""
+    homework_raw: str = ""
+    absence_summary: SimeAbsenceSummary = field(default_factory=SimeAbsenceSummary)
+    eleve_id: str = ""
+    eleve_ck: str | None = None
+    salt: str = ""
+    protected: str = ""
+    sem_ajax_configs: dict[str, tuple[str, str]] = field(default_factory=dict)

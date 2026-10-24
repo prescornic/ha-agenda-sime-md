@@ -12,7 +12,7 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from .agenda_sime_md.client import SimeClient
 from .agenda_sime_md.exceptions import (
@@ -56,9 +56,7 @@ class SimeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._discovered_students: list[SimeStudent] = []
         self._reauth_entry: ConfigEntry | None = None
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle the initial step where user provides credentials."""
         errors: dict[str, str] = {}
 
@@ -72,12 +70,10 @@ class SimeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._abort_if_unique_id_configured()
 
             role_enum = (
-                SimeAccountRole.PARENT
-                if role_str == ROLE_PARENT
-                else SimeAccountRole.STUDENT
+                SimeAccountRole.PARENT if role_str == ROLE_PARENT else SimeAccountRole.STUDENT
             )
 
-            session = async_get_clientsession(self.hass)
+            session = async_create_clientsession(self.hass)
             client = SimeClient(
                 username=username,
                 password=password,
@@ -118,6 +114,8 @@ class SimeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_STUDENT_NAMES: {student.id: student.name},
                     },
                 )
+            finally:
+                await session.close()
 
         schema = vol.Schema(
             {
@@ -138,9 +136,7 @@ class SimeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_students(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_students(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Handle multi-student selection step for parent accounts."""
         errors: dict[str, str] = {}
 
@@ -188,13 +184,9 @@ class SimeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reauth(
-        self, entry_data: dict[str, Any]
-    ) -> FlowResult:
+    async def async_step_reauth(self, entry_data: dict[str, Any]) -> FlowResult:
         """Handle re-authentication initiation."""
-        self._reauth_entry = self.hass.config_entries.async_get_entry(
-            self.context["entry_id"]
-        )
+        self._reauth_entry = self.hass.config_entries.async_get_entry(self.context["entry_id"])
         return await self.async_step_reauth_confirm()
 
     async def async_step_reauth_confirm(
@@ -210,12 +202,10 @@ class SimeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             username = self._reauth_entry.data[CONF_USERNAME]
             role_str = self._reauth_entry.data.get(CONF_ROLE, DEFAULT_ROLE)
             role_enum = (
-                SimeAccountRole.PARENT
-                if role_str == ROLE_PARENT
-                else SimeAccountRole.STUDENT
+                SimeAccountRole.PARENT if role_str == ROLE_PARENT else SimeAccountRole.STUDENT
             )
 
-            session = async_get_clientsession(self.hass)
+            session = async_create_clientsession(self.hass)
             client = SimeClient(
                 username=username,
                 password=password,
@@ -242,6 +232,8 @@ class SimeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_PASSWORD: password,
                     },
                 )
+            finally:
+                await session.close()
 
         schema = vol.Schema({vol.Required(CONF_PASSWORD): str})
         return self.async_show_form(
@@ -265,9 +257,7 @@ class SimeOptionsFlowHandler(config_entries.OptionsFlow):
     def __init__(self, config_entry: ConfigEntry | None = None) -> None:
         """Initialize options flow."""
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Manage polling interval and school hours options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
@@ -277,27 +267,19 @@ class SimeOptionsFlowHandler(config_entries.OptionsFlow):
             {
                 vol.Required(
                     CONF_SCAN_INTERVAL_DAY,
-                    default=options.get(
-                        CONF_SCAN_INTERVAL_DAY, DEFAULT_SCAN_INTERVAL_DAY
-                    ),
+                    default=options.get(CONF_SCAN_INTERVAL_DAY, DEFAULT_SCAN_INTERVAL_DAY),
                 ): vol.All(vol.Coerce(int), vol.Range(min=5, max=120)),
                 vol.Required(
                     CONF_SCAN_INTERVAL_NIGHT,
-                    default=options.get(
-                        CONF_SCAN_INTERVAL_NIGHT, DEFAULT_SCAN_INTERVAL_NIGHT
-                    ),
+                    default=options.get(CONF_SCAN_INTERVAL_NIGHT, DEFAULT_SCAN_INTERVAL_NIGHT),
                 ): vol.All(vol.Coerce(int), vol.Range(min=15, max=240)),
                 vol.Required(
                     CONF_DAY_START_HOUR,
-                    default=options.get(
-                        CONF_DAY_START_HOUR, DEFAULT_DAY_START_HOUR
-                    ),
+                    default=options.get(CONF_DAY_START_HOUR, DEFAULT_DAY_START_HOUR),
                 ): vol.All(vol.Coerce(int), vol.Range(min=0, max=23)),
                 vol.Required(
                     CONF_DAY_END_HOUR,
-                    default=options.get(
-                        CONF_DAY_END_HOUR, DEFAULT_DAY_END_HOUR
-                    ),
+                    default=options.get(CONF_DAY_END_HOUR, DEFAULT_DAY_END_HOUR),
                 ): vol.All(vol.Coerce(int), vol.Range(min=1, max=24)),
             }
         )

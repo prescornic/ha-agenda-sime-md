@@ -64,3 +64,24 @@ async def test_binary_sensors_states(hass: HomeAssistant):
     absence_today = hass.states.get("binary_sensor.elev_exemplar_absence_today")
     assert absence_today is not None
     assert absence_today.state == "off"
+    assert absence_today.attributes["absences_today"] == 0
+    assert absence_today.attributes["baseline_absences"] == 3
+
+    # Now simulate an absence recorded today (total increases from 3 to 4)
+    sample_data.absence_summary.sem1_unmotivated += 1
+    coordinator = hass.data[DOMAIN][entry.entry_id]
+    with (
+        patch("custom_components.agenda_sime_md.SimeClient.login", new_callable=AsyncMock),
+        patch(
+            "custom_components.agenda_sime_md.SimeClient.get_student_data",
+            new_callable=AsyncMock,
+            return_value=sample_data,
+        ),
+    ):
+        await coordinator.async_refresh()
+        await hass.async_block_till_done()
+
+    absence_today = hass.states.get("binary_sensor.elev_exemplar_absence_today")
+    assert absence_today.state == "on"
+    assert absence_today.attributes["absences_today"] == 1
+    assert absence_today.attributes["baseline_absences"] == 3

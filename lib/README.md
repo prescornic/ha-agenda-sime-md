@@ -22,6 +22,7 @@ pip install agenda-sime-md
 import asyncio
 from agenda_sime_md import SimeClient, SimeAccountRole
 
+
 async def main():
     async with SimeClient("username", "password", SimeAccountRole.PARENT) as client:
         await client.login()
@@ -32,6 +33,7 @@ async def main():
             print(f"GPA: {data.general_average}")
             for grade in data.recent_grades:
                 print(f"  {grade.date_str}: {grade.subject} -> {grade.grade}")
+
 
 asyncio.run(main())
 ```

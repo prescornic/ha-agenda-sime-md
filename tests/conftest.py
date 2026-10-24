@@ -7,6 +7,7 @@ import pytest
 # Initialize pycares channel to warm up its safe shutdown loop thread before tests run
 with suppress(ImportError, RuntimeError, OSError):
     import pycares
+
     _channel = pycares.Channel()
 
 
